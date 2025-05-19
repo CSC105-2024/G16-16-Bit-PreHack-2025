@@ -65,7 +65,7 @@ const PostCard = ({ post }) => {
               <span className="text-sm text-gray-700">{post.author.username}</span>
             </Link>
             
-            <div className="flex items-center text-xs text-gray-500">
+            <div className="flex items-center text-xs text-gray- ml-3">
               <Calendar className="h-3 w-3 mr-1" />
               <span>{formatDate(post.createdAt)}</span>
             </div>

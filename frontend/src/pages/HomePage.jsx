@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import PostList from '../components/posts/PostList';
-import { useAuthStore } from '../stores/authStore';
+import { useAuth } from '../contexts/AuthContext';
 
 const HomePage = () => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuth();
   
   useEffect(() => {
     document.title = 'Pinpoint - Share Location-Based Experiences';

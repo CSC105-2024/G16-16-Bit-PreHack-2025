@@ -2,25 +2,80 @@
 
 @import 'tailwindcss';
 
-@layer base {
-  html {
-    @apply scroll-smooth;
+/* Define custom colors using CSS variables */
+@theme {
+  /* Primary colors */
+  --primary-50: #f0f9ff;
+  --primary-100: #e0f2fe;
+  --primary-200: #bae6fd;
+  --primary-300: #7dd3fc;
+  --primary-400: #38bdf8;
+  --primary-500: #0ea5e9;
+  --primary-600: #0284c7;
+  --primary-700: #0369a1;
+  --primary-800: #075985;
+  --primary-900: #0c4a6e;
+  --primary-950: #082f49;
+  
+  /* Secondary colors */
+  --secondary-50: #f0fdfa;
+  --secondary-100: #ccfbf1;
+  --secondary-200: #99f6e4;
+  --secondary-300: #5eead4;
+  --secondary-400: #2dd4bf;
+  --secondary-500: #14b8a6;
+  --secondary-600: #0d9488;
+  --secondary-700: #0f766e;
+  --secondary-800: #115e59;
+  --secondary-900: #134e4a;
+  --secondary-950: #042f2e;
+  
+  /* Accent colors */
+  --accent-50: #fff7ed;
+  --accent-100: #ffedd5;
+  --accent-200: #fed7aa;
+  --accent-300: #fdba74;
+  --accent-400: #fb923c;
+  --accent-500: #f97316;
+  --accent-600: #ea580c;
+  --accent-700: #c2410c;
+  --accent-800: #9a3412;
+  --accent-900: #7c2d12;
+  --accent-950: #431407;
+}
+
+/* Define custom animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
-  body {
-    @apply font-sans bg-gray-50 text-gray-900 min-h-screen;
+  to {
+    opacity: 1;
   }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-medium leading-tight;
-  }
-  h1 {
-    @apply text-3xl sm:text-4xl;
-  }
-  h2 {
-    @apply text-2xl sm:text-3xl;
-  }
-  h3 {
-    @apply text-xl sm:text-2xl;
-  }
+}
+
+html {
+  @apply scroll-smooth;
+}
+
+body {
+  @apply font-sans bg-gray-50 text-gray-900 min-h-screen;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-medium leading-tight;
+}
+
+h1 {
+  @apply text-3xl sm:text-4xl;
+}
+
+h2 {
+  @apply text-2xl sm:text-3xl;
+}
+
+h3 {
+  @apply text-xl sm:text-2xl;
 }
 
 @layer components {
@@ -28,28 +83,61 @@
     @apply max-w-5xl mx-auto px-4 sm:px-6 lg:px-8;
   }
   
+  /* Base button styles */
   .btn {
     @apply inline-flex items-center justify-center rounded-md py-2 px-4 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200;
   }
   
+  /* Button variants with all styles expanded */
   .btn-primary {
-    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    @apply inline-flex items-center justify-center rounded-md py-2 px-4 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200;
+    background-color: var(--primary-600);
+    color: white;
+  }
+  .btn-primary:hover {
+    background-color: var(--primary-700);
+  }
+  .btn-primary:focus {
+    --tw-ring-color: var(--primary-500);
   }
   
   .btn-secondary {
-    @apply btn bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500;
+    @apply inline-flex items-center justify-center rounded-md py-2 px-4 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200;
+    background-color: var(--secondary-600);
+    color: white;
+  }
+  .btn-secondary:hover {
+    background-color: var(--secondary-700);
+  }
+  .btn-secondary:focus {
+    --tw-ring-color: var(--secondary-500);
   }
   
   .btn-accent {
-    @apply btn bg-accent-500 text-white hover:bg-accent-600 focus:ring-accent-400;
+    @apply inline-flex items-center justify-center rounded-md py-2 px-4 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200;
+    background-color: var(--accent-500);
+    color: white;
+  }
+  .btn-accent:hover {
+    background-color: var(--accent-600);
+  }
+  .btn-accent:focus {
+    --tw-ring-color: var(--accent-400);
   }
   
   .btn-outline {
-    @apply btn border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-primary-500;
+    @apply inline-flex items-center justify-center rounded-md py-2 px-4 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50;
+  }
+  .btn-outline:focus {
+    --tw-ring-color: var(--primary-500);
   }
   
   .input-field {
-    @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm py-2 px-3 border;
+    @apply block w-full rounded-md border-gray-300 shadow-sm sm:text-sm py-2 px-3 border;
+  }
+  .input-field:focus {
+    border-color: var(--primary-500);
+    --tw-ring-color: var(--primary-500);
   }
   
   .card {
@@ -57,7 +145,7 @@
   }
   
   .animate-enter {
-    @apply animate-fade-in;
+    animation: fade-in 0.3s ease-out;
   }
 
   .map-container {
@@ -65,7 +153,9 @@
   }
   
   .tag {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 mr-2;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2;
+    background-color: var(--primary-100);
+    color: var(--primary-800);
   }
 
   .avatar {

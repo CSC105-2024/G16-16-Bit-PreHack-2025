@@ -22,7 +22,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<RegisterPage />} />
+        <Route path= "register" element={<RegisterPage />} />
         <Route path="home" element={<HomePage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="posts/:id" element={<PostDetailPage />} />

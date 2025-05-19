@@ -1,9 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, LogIn, LogOut, User, PlusCircle } from 'lucide-react';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Header = () => {
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {

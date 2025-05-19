@@ -1,7 +1,5 @@
 import { create } from 'zustand';
 
-// In a real app, we would use actual API calls for these operations
-// This is a mock implementation for the MVP
 
 export const useAuthStore = create((set) => {
   const mockUsers = [

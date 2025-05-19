@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import RegisterForm from '../components/auth/RegisterForm';
-import { useAuthStore } from '../stores/authStore';
+import { useAuth } from '../contexts/AuthContext';
 
 const RegisterPage = () => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuth();
   
   useEffect(() => {
     document.title = 'Create Account - Pinpoint';

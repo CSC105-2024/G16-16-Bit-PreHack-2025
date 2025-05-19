@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { CalendarDays, MapPin, Edit3, Trash2, AlertCircle } from 'lucide-react';
-import { useAuthStore } from '../stores/authStore';
-import { usePostStore } from '../stores/postStore';
+import { useAuth } from '../contexts/AuthContext';
+import { usePost } from '../contexts/PostContext';
 import PostCard from '../components/posts/PostCard';
 
 const ProfilePage = () => {
   const { userId } = useParams();
-  const { user } = useAuthStore();
-  const { fetchUserPosts, userPosts, deletePost, isLoading, error } = usePostStore();
+  const { user } = useAuth();
+  const { fetchUserPosts, userPosts, deletePost, isLoading, error } = usePost();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
   const [deleteError, setDeleteError] = useState(null);
@@ -66,21 +66,27 @@ const ProfilePage = () => {
     );
   }
   
-  // Find the profile user from their posts (in a real app, we'd fetch the user data separately)
+  if (error) {
+    return (
+      <div className="bg-error-50 text-error-700 p-4 rounded-md">
+        <p>Error loading profile: {error}</p>
+        <button 
+          onClick={() => fetchUserPosts(userId)}
+          className="mt-2 text-sm text-primary-600 hover:text-primary-700"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+  
   const profileUser = userPosts.length > 0 ? userPosts[0].author : user;
   
   return (
     <div>
-      {error && (
-        <div className="mb-6 p-3 bg-error-50 text-error-600 rounded-md flex items-start">
-          <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
-      )}
-      
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
-        <div className="bg-primary-600 h-32"></div>
-        <div className="px-6 pb-6 relative">
+      <div className="bg-white rounded-lg shadow mb-8 h-48 relative">
+        <div className="bg-gray-200 h-32 w-full rounded-t-lg"></div>
+        <div className="px-6">
           <img 
             src={profileUser?.avatar || 'https://via.placeholder.com/200'} 
             alt={profileUser?.username} 
@@ -164,19 +170,20 @@ const ProfilePage = () => {
       
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 animate-slide-up">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
               Delete Post
             </h3>
             
-            <p className="text-gray-700 mb-4">
+            <p className="text-gray-600 mb-6">
               Are you sure you want to delete this post? This action cannot be undone.
             </p>
             
             {deleteError && (
-              <div className="mb-4 p-3 bg-error-50 text-error-600 rounded-md text-sm">
-                {deleteError}
+              <div className="bg-error-50 text-error-700 p-3 rounded-md mb-4 flex items-start">
+                <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                <p>{deleteError}</p>
               </div>
             )}
             
@@ -190,22 +197,10 @@ const ProfilePage = () => {
               </button>
               <button
                 onClick={confirmDelete}
-                className="btn-error bg-error-600 text-white hover:bg-error-700 relative"
+                className="btn-error"
                 disabled={isDeleting}
               >
-                {isDeleting ? (
-                  <>
-                    <span className="opacity-0">Delete</span>
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    </span>
-                  </>
-                ) : (
-                  'Delete'
-                )}
+                {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>

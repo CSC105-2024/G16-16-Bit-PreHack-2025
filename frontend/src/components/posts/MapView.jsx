@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from '@react-google-maps/api';
 
+const apiKey = import.meta.env.VITE_GOOGLE_MAP_API;
+
 const MapView = ({ 
   location, 
   isEditable = false, 
@@ -9,7 +11,7 @@ const MapView = ({
 }) => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: "AIzaSyBVF0jgp4oHCSyrrJf-it4xjLZskMGpy3U"
+    googleMapsApiKey: apiKey,
   });
   
   const [map, setMap] = useState(null);
@@ -18,40 +20,64 @@ const MapView = ({
     lat: location?.lat || 40.7128,
     lng: location?.lng || -74.0060
   });
-  
+
   useEffect(() => {
     if (location) {
       setCenter({ lat: location.lat, lng: location.lng });
     }
   }, [location]);
-  
+
   const onLoad = useCallback((map) => {
     setMap(map);
   }, []);
-  
+
   const onUnmount = useCallback(() => {
     setMap(null);
   }, []);
-  
-  const handleMapClick = useCallback((e) => {
+
+  const reverseGeocode = async (lat, lng) => {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.results || data.results.length === 0) {
+      return {
+        address: `Selected Location (${lat.toFixed(6)}, ${lng.toFixed(6)})`,
+        city: "Unknown",
+        country: "Unknown"
+      };
+    }
+
+    const addressComponents = data.results[0].address_components;
+    const getComponent = (type) =>
+      addressComponents.find((comp) => comp.types.includes(type))?.long_name || "Unknown";
+
+    return {
+      address: data.results[0].formatted_address,
+      city: getComponent("locality") || getComponent("administrative_area_level_1"),
+      country: getComponent("country")
+    };
+  };
+
+  const handleMapClick = useCallback(async (e) => {
     if (!isEditable || !onLocationChange) return;
-    
+
     const lat = e.latLng?.lat() || 0;
     const lng = e.latLng?.lng() || 0;
-    
-    // In a real app, we would use a geocoding service to get the address from coordinates
-    // This is simplified for the demo
+
+    const { address, city, country } = await reverseGeocode(lat, lng);
+
     const newLocation = {
       lat,
       lng,
-      address: `Selected Location (${lat.toFixed(6)}, ${lng.toFixed(6)})`,
-      city: "Unknown City",
-      country: "Unknown Country"
+      address,
+      city,
+      country
     };
-    
+
     onLocationChange(newLocation);
   }, [isEditable, onLocationChange]);
-  
+
   if (!isLoaded) {
     return (
       <div 
@@ -62,7 +88,7 @@ const MapView = ({
       </div>
     );
   }
-  
+
   return (
     <div style={{ height }}>
       <GoogleMap
@@ -90,7 +116,7 @@ const MapView = ({
             }}
           />
         )}
-        
+
         {selectedLocation && (
           <InfoWindow
             position={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}
@@ -103,7 +129,7 @@ const MapView = ({
           </InfoWindow>
         )}
       </GoogleMap>
-      
+
       {isEditable && (
         <div className="mt-2 text-sm text-gray-500">
           {location ? 

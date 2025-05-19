@@ -93,12 +93,12 @@ const ProfilePage = () => {
             className="absolute -top-16 w-32 h-32 rounded-full border-4 border-white shadow"
           />
           
-          <div className="pt-20">
+          <div className="">
             <h1 className="text-2xl font-bold text-gray-900">
               {profileUser?.username || 'User'}
             </h1>
             
-            <div className="flex items-center text-gray-500 mt-2">
+            <div className="flex items-center text-gray-500">
               <CalendarDays className="h-4 w-4 mr-1" />
               <span className="text-sm">
                 Member since {profileUser?.createdAt ? formatDate(profileUser.createdAt) : 'unknown'}

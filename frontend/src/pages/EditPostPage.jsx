@@ -1,15 +1,15 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { usePostStore } from '../stores/postStore';
+import { usePost } from '../contexts/PostContext';
+import { useAuth } from '../contexts/AuthContext';
 import PostForm from '../components/posts/PostForm';
-import { useAuthStore } from '../stores/authStore';
 import { AlertCircle } from 'lucide-react';
 
 const EditPostPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const { currentPost, fetchPostById, updatePost, isLoading, error } = usePostStore();
+  const { user } = useAuth();
+  const { currentPost, fetchPostById, updatePost, isLoading, error } = usePost();
   
   useEffect(() => {
     document.title = 'Edit Post - Pinpoint';
@@ -26,11 +26,11 @@ const EditPostPage = () => {
       await updatePost(id, data);
       navigate(`/posts/${id}`);
     } catch (error) {
-      // Error is handled by the store
+      // Error is handled by the context
     }
   };
   
-  if (isLoading || !currentPost) {
+  if (isLoading && !currentPost) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -38,46 +38,69 @@ const EditPostPage = () => {
     );
   }
   
-  // Check if user is the author
-  if (currentPost.author.id !== user?.id) {
+  if (error) {
     return (
-      <div className="bg-error-50 text-error-700 p-6 rounded-lg shadow-sm">
+      <div className="bg-error-50 text-error-700 p-4 rounded-md">
         <div className="flex items-start">
-          <AlertCircle className="h-6 w-6 mr-3 flex-shrink-0" />
-          <div>
-            <h2 className="text-lg font-medium mb-2">Not Authorized</h2>
-            <p className="mb-4">You don't have permission to edit this post.</p>
-            <button
-              onClick={() => navigate(-1)}
-              className="btn-primary"
-            >
-              Go Back
-            </button>
-          </div>
+          <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <p>{error}</p>
         </div>
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-4 btn-outline"
+        >
+          Go Back
+        </button>
       </div>
     );
   }
   
-  const initialData = {
-    title: currentPost.title,
-    description: currentPost.description,
-    imageUrl: currentPost.imageUrl,
-    location: currentPost.location
-  };
+  if (currentPost && user && currentPost.author.id !== user.id) {
+    return (
+      <div className="bg-error-50 text-error-700 p-4 rounded-md">
+        <div className="flex items-start">
+          <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <p>You can only edit your own posts</p>
+        </div>
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-4 btn-outline"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+  
+  if (!currentPost) {
+    return (
+      <div className="bg-error-50 text-error-700 p-4 rounded-md">
+        <div className="flex items-start">
+          <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <p>Post not found</p>
+        </div>
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-4 btn-outline"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
   
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        Edit Your Experience
+        Edit Experience
       </h1>
       
       <PostForm 
-        initialData={initialData}
         onSubmit={handleSubmit}
         isLoading={isLoading}
         error={error}
         submitLabel="Update Post"
+        initialValues={currentPost}
       />
     </div>
   );

@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import { MapPin, ThumbsUp, ThumbsDown, Calendar } from 'lucide-react';
-import { useAuthStore } from '../../stores/authStore';
-import { usePostStore } from '../../stores/postStore';
+import { useAuth } from '../../contexts/AuthContext';
+import { usePost } from '../../contexts/PostContext';
 
 const PostCard = ({ post }) => {
-  const { isAuthenticated } = useAuthStore();
-  const { votePost } = usePostStore();
+  const { isAuthenticated } = useAuth();
+  const { votePost } = usePost();
   
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -30,29 +30,32 @@ const PostCard = ({ post }) => {
   
   return (
     <div className="card overflow-hidden transition-all duration-300 hover:translate-y-[-5px] group animate-enter">
-      <div className="relative">
+      <Link to={`/posts/${post.id}`} className="block h-52 overflow-hidden">
         <img 
           src={post.imageUrl} 
           alt={post.title}
-          className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-          <h3 className="text-white font-semibold truncate">{post.title}</h3>
-        </div>
-      </div>
+      </Link>
       
       <div className="p-4">
-        <div className="flex items-center text-gray-500 text-sm mb-3">
-          <MapPin className="h-4 w-4 mr-1 text-primary-500" />
-          <span className="truncate">{post.location.city}, {post.location.country}</span>
+        <div className="flex items-center text-sm text-gray-500 mb-2">
+          <MapPin className="h-4 w-4 text-primary-500 mr-1" />
+          <span>{post.location.city}, {post.location.country}</span>
         </div>
         
-        <p className="text-gray-700 line-clamp-2 mb-4 text-sm">
+        <Link to={`/posts/${post.id}`} className="block">
+          <h3 className="text-lg font-semibold text-gray-900 hover:text-primary-600 mb-2 line-clamp-1">
+            {post.title}
+          </h3>
+        </Link>
+        
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
           {post.description}
         </p>
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+        <div className="flex justify-between items-center text-sm">
+          <div className="flex items-center space-x-4">
             <Link to={`/profile/${post.author.id}`} className="flex items-center">
               <img 
                 src={post.author.avatar}
@@ -76,7 +79,7 @@ const PostCard = ({ post }) => {
               title={isAuthenticated ? 'Upvote' : 'Login to vote'}
             >
               <ThumbsUp className="h-4 w-4 text-success-600 mr-1" />
-              <span className="text-xs font-medium">{post.upvotes}</span>
+              <span>{post.upvotes}</span>
             </button>
             
             <button 
@@ -86,17 +89,10 @@ const PostCard = ({ post }) => {
               title={isAuthenticated ? 'Downvote' : 'Login to vote'}
             >
               <ThumbsDown className="h-4 w-4 text-error-600 mr-1" />
-              <span className="text-xs font-medium">{post.downvotes}</span>
+              <span>{post.downvotes}</span>
             </button>
           </div>
         </div>
-        
-        <Link 
-          to={`/posts/${post.id}`}
-          className="block mt-4 btn-primary w-full text-center"
-        >
-          View Details
-        </Link>
       </div>
     </div>
   );

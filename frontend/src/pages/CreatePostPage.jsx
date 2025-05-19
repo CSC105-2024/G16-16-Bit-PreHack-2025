@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePostStore } from '../stores/postStore';
+import { usePost } from '../contexts/PostContext';
 import PostForm from '../components/posts/PostForm';
 
 const CreatePostPage = () => {
-  const { createPost, isLoading, error } = usePostStore();
+  const { createPost, isLoading, error } = usePost();
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -16,7 +16,7 @@ const CreatePostPage = () => {
       const newPost = await createPost(data);
       navigate(`/posts/${newPost.id}`);
     } catch (error) {
-      // Error is handled by the store
+      // Error is handled by the context
     }
   };
   

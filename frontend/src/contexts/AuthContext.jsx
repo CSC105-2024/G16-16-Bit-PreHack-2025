@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { Axios } from '../asiosInstance';
+
 
 // Create the context
 const AuthContext = createContext();
@@ -37,22 +39,30 @@ export const AuthProvider = ({ children }) => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      const user = mockUsers.find(u => u.email === email && u.password === password);
+
       
-      if (!user) {
-        throw new Error('Invalid email or password');
-      }
+      const { data } = await Axios.post('/auth/login', { email, password });
+
+  
+      if(data) setUser(data.user)
       
-      // Remove password from user object before storing
-      const { password: _, ...userWithoutPassword } = user;
+      // const user = mockUsers.find(u => u.email === email && u.password === password);
+      
+      // if (!user) {
+      //   throw new Error('Invalid email or password');
+      // }
+      
+      // // Remove password from user object before storing
+      // const { password: _, ...userWithoutPassword } = user;
       
       // Store user in localStorage (in a real app, we would store a token)
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-      
-      setUser(userWithoutPassword);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      setUser(data.user);
       setIsAuthenticated(true);
       setIsLoading(false);
     } catch (error) {
+      console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
       setIsLoading(false);
     }
@@ -66,41 +76,46 @@ export const AuthProvider = ({ children }) => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      if (mockUsers.some(u => u.email === email)) {
-        throw new Error('Email already exists');
-      }
+      // if (mockUsers.some(u => u.email === email)) {
+      //   throw new Error('Email already exists');
+      // }
       
-      if (mockUsers.some(u => u.username === username)) {
-        throw new Error('Username already exists');
-      }
+      // if (mockUsers.some(u => u.username === username)) {
+      //   throw new Error('Username already exists');
+      // }
       
-      const newUser = {
-        id: (mockUsers.length + 1).toString(),
-        username,
-        email,
-        password,
-        avatar: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 60) + 1}.jpg`,
-        createdAt: new Date().toISOString(),
-      };
+      // const newUser = {
+      //   id: (mockUsers.length + 1).toString(),
+      //   username,
+      //   email,
+      //   password,
+      //   avatar: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 60) + 1}.jpg`,
+      //   createdAt: new Date().toISOString(),
+      // };
       
-      mockUsers.push(newUser);
+      // mockUsers.push(newUser);
       
       // Remove password from user object before storing
-      const { password: _, ...userWithoutPassword } = newUser;
+      // const { password: _, ...userWithoutPassword } = newUser;
       
       // Store user in localStorage (in a real app, we would store a token)
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+
+      const { data } = await Axios.post('/auth/register', { email, username, password });
+      console.log('Register response:', data);
+      localStorage.setItem('user', JSON.stringify(data.user));
       
-      setUser(userWithoutPassword);
+      setUser(data.user);
       setIsAuthenticated(true);
       setIsLoading(false);
     } catch (error) {
+      console.error('Registration error:', error);
       setError(error instanceof Error ? error.message : 'Registration failed');
       setIsLoading(false);
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await Axios.post('/auth/logout');
     localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);

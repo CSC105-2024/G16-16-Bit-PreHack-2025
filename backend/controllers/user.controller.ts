@@ -2,9 +2,6 @@ import { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
 import { JWT } from '../util/jwt.ts';
 import { UserModel } from '../models/user.ts';
-import { PrismaClient } from '../src/generated/prisma/index.js';
-
-const prisma = new PrismaClient();
 
 export class UserController {
     

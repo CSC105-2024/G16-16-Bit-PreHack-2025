@@ -21,7 +21,16 @@ model User {
   email     String   @unique
   password  String
   avatarUrl String? 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now())  
+  posts     Post[]
+}
 
-  
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  authorId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id])
 }

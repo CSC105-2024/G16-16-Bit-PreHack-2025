@@ -40,8 +40,8 @@ const PostCard = ({ post }) => {
       
       <div className="p-4">
         <div className="flex items-center text-sm text-gray-500 mb-2">
-          <MapPin className="h-4 w-4 text-primary-500 mr-1" />
-          <span>{post.location.city}, {post.location.country}</span>
+          <MapPin className="h-4 w-4 text-blue-500 mr-1" />
+          <span className="text--700">{post.location.city}, {post.location.country}</span>
         </div>
         
         <Link to={`/posts/${post.id}`} className="block">
@@ -78,8 +78,8 @@ const PostCard = ({ post }) => {
               className={`flex items-center p-1 rounded-md ${isAuthenticated ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed'}`}
               title={isAuthenticated ? 'Upvote' : 'Login to vote'}
             >
-              <ThumbsUp className="h-4 w-4 text-success-600 mr-1" />
-              <span>{post.upvotes}</span>
+              <ThumbsUp className="h-4 w-4 text-green-600 mr-1" />
+              <span className="text-green-600 font-semibold">{post.upvotes}</span>
             </button>
             
             <button 
@@ -88,8 +88,8 @@ const PostCard = ({ post }) => {
               className={`flex items-center p-1 rounded-md ${isAuthenticated ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed'}`}
               title={isAuthenticated ? 'Downvote' : 'Login to vote'}
             >
-              <ThumbsDown className="h-4 w-4 text-error-600 mr-1" />
-              <span>{post.downvotes}</span>
+              <ThumbsDown className="h-4 w-4 mr-1 text-[#ff2b95]" />
+              <span className="font-semibold text-[#ff2b95]">{post.downvotes}</span>
             </button>
           </div>
         </div>

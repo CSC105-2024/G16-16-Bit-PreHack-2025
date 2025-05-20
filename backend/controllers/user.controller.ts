@@ -4,22 +4,49 @@ import { JWT } from '../util/jwt.ts';
 import { UserModel } from '../models/user.ts';
 import { PrismaClient } from '../src/generated/prisma/index.js';
 
+// Interface for request validation
+interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  name?: string;
+  bio?: string;
+}
+
+interface LoginRequest {
+  email?: string;
+  username?: string;
+  password: string;
+}
+
 const prisma = new PrismaClient();
 
 export class UserController {
     
   static async register(c: Context) {
-    try {
-      const body = await c.req.json();
-      const { username, email, name, password } = body;
+    try {      // Parse and validate request body
+      const body = await c.req.json() as RegisterRequest;
+      const { username: rawUsername, email: rawEmail, password } = body;
       
-      if (!username || !email || !password) {
+      // Trim input fields and validate
+      const username = rawUsername?.trim();
+      const email = rawEmail?.trim();
+      
+      if (!username || !email || !password?.trim()) {
         return c.json({ 
           success: false, 
-          message: 'Username, email and password are required' 
+          message: 'Username, email and password are required and cannot be empty' 
+        }, 400);
+      }// Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return c.json({
+          success: false,
+          message: 'Invalid email format'
         }, 400);
       }
-      
+
+      // Check if user already exists
       const userExists = await UserModel.exists(username, email);
       if (userExists) {
         return c.json({ 
@@ -28,6 +55,7 @@ export class UserController {
         }, 400);
       }
       
+      // Create new user
       const user = await UserModel.create(
         email,
         username,
@@ -35,14 +63,12 @@ export class UserController {
       );
       
       const token = JWT.generate(user.id);
-      
-      // set cookie so user stays logged in
       UserController.setAuthCookie(c, token);
       
       return c.json({
         success: true,
         user,
-          token
+        token
       }, 201);
     } catch (error) {
       console.error('Registration error:', error);
@@ -54,9 +80,15 @@ export class UserController {
   }
   
   static async login(c: Context) {
-    try {
-      const { email, username, password } = await c.req.json();
+    try {      // Parse and validate request body
+      const body = await c.req.json() as LoginRequest;
+      const { email: rawEmail, username: rawUsername, password } = body;
       
+      // Trim input fields
+      const email = rawEmail?.trim();
+      const username = rawUsername?.trim();
+      
+      // Validate required fields
       if (!password || (!email && !username)) {
         return c.json({ 
           success: false, 
@@ -64,40 +96,27 @@ export class UserController {
         }, 400);
       }
       
-      let user;
-      // can login with either email or username
-      if (email) {
-        user = await UserModel.findByEmail(email);
-      } else {
-        user = await UserModel.findByUsername(username);
-      }
+      // Find user by email or username
+      const user = email 
+        ? await UserModel.findByEmail(email)
+        : await UserModel.findByUsername(username!);
       
-      if (!user) {
+      // Check if user exists and password is valid
+      if (!user || !await UserModel.validatePassword(user, password)) {
         return c.json({ 
           success: false, 
           message: 'Invalid credentials' 
         }, 401);
       }
       
-      const isValidPassword = await UserModel.validatePassword(user, password);
-      if (!isValidPassword) {
-        return c.json({ 
-          success: false, 
-          message: 'Invalid credentials' 
-        }, 401);
-      }
-      
+      // Generate and set auth token
       const token = JWT.generate(user.id);
-
       UserController.setAuthCookie(c, token);
-
-      // don't send the password back to client
-      const { password: _, ...userWithoutPassword } = user;
       
       return c.json({
         success: true,
-        user: userWithoutPassword,
-          token
+        user,
+        token
       });
     } catch (error) {
       console.error('Login error:', error);
@@ -107,15 +126,17 @@ export class UserController {
       }, 500);
     }
   }
-  
-  
-  
-  
-  
+    /**
+   * Get the currently authenticated user's data
+   * @param c - Hono Context containing userId from auth middleware
+   * @returns User data without sensitive information
+   */
   static async getCurrentUser(c: Context) {
     try {
-        const userId = c.get('userId');
+      // Get userId from context (set by auth middleware)
+      const userId = c.get('userId');
       
+      // Early return if not authenticated
       if (!userId) {
         return c.json({ 
           success: false, 
@@ -123,23 +144,27 @@ export class UserController {
         }, 401);
       }
       
-      const userData = await UserModel.findById(userId);
+      // Fetch user data from database
+      const user = await UserModel.findById(userId);
       
-      if (!userData) {
+      // Handle case where user was deleted but token is still valid
+      if (!user) {
         return c.json({ 
           success: false, 
           message: 'User not found' 
         }, 404);
       }
       
-      // remove password before sending to frontend
-      const { password, ...userWithoutPassword } = userData;
+      // Remove sensitive data and return user info
+      const { password: _removed, ...safeUser } = user;
       
       return c.json({
         success: true,
-        user: userWithoutPassword
+        user: safeUser
       });
+
     } catch (error) {
+      // Log the actual error for debugging but send a safe message to client
       console.error('Get current user error:', error);
       return c.json({ 
         success: false, 

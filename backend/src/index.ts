@@ -20,11 +20,12 @@ app.use('*', cors({
 }));
 
 app.get('/', (c) => {
-  return c.json({ status: 'success', message: 'DebtMate API is running' });
+  return c.json({ status: 'success', message: 'PinPoint API is running' });
 });
 
 // hook up all our routes
 app.route('', api);
+
 
 console.log(`Server is running on port ${port}`);
 serve({

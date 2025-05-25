@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import dotenv from 'dotenv';
-import api from '../routes/index.ts';
+import api, { protectedRoutes } from '../routes/index.ts';
 dotenv.config();
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -25,7 +25,6 @@ app.get('/', (c) => {
 
 // hook up all our routes
 app.route('', api);
-
 
 console.log(`Server is running on port ${port}`);
 serve({

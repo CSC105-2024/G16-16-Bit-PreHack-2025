@@ -5,6 +5,9 @@ import { setCookie } from 'hono/cookie';
 
 const api = new Hono();
 
+// Create protected routes for authenticated endpoints
+export const protectedRoutes = new Hono();
+
 // auth endpoints - no auth needed for these obviously
 api.post('/auth/register', UserController.register);
 api.post('/auth/login', UserController.login);
@@ -24,13 +27,12 @@ api.post('/auth/logout', (c) => {
 });
 
 // everything below needs auth token
-const protectedRoutes = new Hono();
 protectedRoutes.use('*', authMiddleware);
 protectedRoutes.get('/users/me', UserController.getCurrentUser);
 protectedRoutes.get('/me', UserController.isAuthenticated);
 
 
-// need to prefix with /api so it doesn't mess with the root routes
-api.route('/api', protectedRoutes);
+// Mount protected routes to the main API router
+api.route('', protectedRoutes);
 
 export default api;

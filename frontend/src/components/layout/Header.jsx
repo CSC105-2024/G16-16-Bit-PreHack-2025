@@ -24,9 +24,9 @@ const Header = () => {
             <>
               <Link 
                 to="/create" 
-                className="hidden sm:flex items-center space-x-1 text-sm text-primary-600 hover:text-primary-700"
+                className="hidden sm:inline-flex items-center space-x-2 text-sm font-semibold px-4 py-2 rounded-lg bg-blue-500 text-white shadow hover:bg-primary-700 hover:scale-105 active:scale-95 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2"
               >
-                <PlusCircle className="h-4 w-4" />
+                <PlusCircle className="h-4 w-4 mr-1" />
                 <span>Create Post</span>
               </Link>
               

@@ -2,6 +2,7 @@ import { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
 import { JWT } from '../util/jwt.ts';
 import { UserModel } from '../models/user.ts';
+<<<<<<< HEAD
 import { PrismaClient } from '../src/generated/prisma/index.js';
 
 // Interface for request validation
@@ -20,6 +21,8 @@ interface LoginRequest {
 }
 
 const prisma = new PrismaClient();
+=======
+>>>>>>> origin/lifeline
 
 export class UserController {
     

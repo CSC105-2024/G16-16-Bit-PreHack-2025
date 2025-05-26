@@ -149,7 +149,7 @@ const PostDetailPage = () => {
             <div className="flex items-center">
               <Link to={`/profile/${currentPost.author.id}`} className="flex items-center group">
                 <img 
-                  src={currentPost.author.avatar}
+                  src={currentPost.author.avatar || 'https://placehold.co/600x400/000000/FFFFFF.png?text=Profile'}
                   alt={currentPost.author.username}
                   className="h-10 w-10 rounded-full mr-3 border border-gray-200"
                 />
@@ -207,14 +207,17 @@ const PostDetailPage = () => {
               <MapView 
                 location={{
                   lat: currentPost.location.lat,
-                  lng: currentPost.location.lng
+                  lng: currentPost.location.lng,
+                  address: currentPost.location.address,
+                  city: currentPost.location.city,
+                  country: currentPost.location.country
                 }} 
                 markerTitle={currentPost.title}
               />
             </div>
             
             <a 
-              href={`https://www.google.com/maps/search/?api=1&query=${currentPost.location.lat},${currentPost.location.lng}`} 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${currentPost.location.lat},${currentPost.location.lng}`)}`} 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center text-primary-600 hover:text-primary-700"

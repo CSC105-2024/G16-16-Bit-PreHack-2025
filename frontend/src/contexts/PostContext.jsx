@@ -1,83 +1,9 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
+import { Axios } from '../axiosInstance';
 
 // Create the context
 const PostContext = createContext();
-// Mock data for posts
-const mockPosts = [
-  {
-    id: '1',
-    title: 'Charming Café in Paris',
-    description: 'Discovered this hidden gem in the heart of Montmartre. The croissants are heavenly and the coffee is perfectly brewed. The vintage interior and friendly staff make it a must-visit spot.',
-    imageUrl: 'https://images.pexels.com/photos/2074130/pexels-photo-2074130.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-    location: {
-      lat: 48.8566,
-      lng: 2.3522,
-      address: '123 Rue de Montmartre',
-      city: 'Paris',
-      country: 'France'
-    },
-    author: {
-      id: '1',
-      username: 'traveler_sophie',
-      email: 'sophie@example.com',
-      avatar: 'https://randomuser.me/api/portraits/women/32.jpg',
-      createdAt: '2024-01-15T10:00:00Z'
-    },
-    upvotes: 124,
-    downvotes: 5,
-    createdAt: '2024-02-15T10:00:00Z',
-    updatedAt: '2024-02-15T10:00:00Z'
-  },
-  {
-    id: '2',
-    title: 'Breathtaking Viewpoint in Kyoto',
-    description: 'This secret spot offers the most incredible view of Kyoto at sunset. The walk up might be challenging, but the panoramic view of temples and cherry blossoms makes it absolutely worth it.',
-    imageUrl: 'https://images.pexels.com/photos/402028/pexels-photo-402028.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-    location: {
-      lat: 35.0116,
-      lng: 135.7681,
-      address: 'Kiyomizu Temple Path',
-      city: 'Kyoto',
-      country: 'Japan'
-    },
-    author: {
-      id: '2',
-      username: 'wanderlust_kai',
-      email: 'kai@example.com',
-      avatar: 'https://randomuser.me/api/portraits/men/44.jpg',
-      createdAt: '2024-01-10T15:30:00Z'
-    },
-    upvotes: 89,
-    downvotes: 2,
-    createdAt: '2024-02-20T15:30:00Z',
-    updatedAt: '2024-02-20T15:30:00Z'
-  },
-  {
-    id: '3',
-    title: 'Secret Beach in Tulum',
-    description: 'Found this pristine beach away from the tourist crowds. Crystal clear waters, soft white sand, and barely any people around. Perfect spot for swimming and snorkeling!',
-    imageUrl: 'https://images.pexels.com/photos/1835718/pexels-photo-1835718.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-    location: {
-      lat: 20.2114,
-      lng: -87.4654,
-      address: 'Tulum Beach Road',
-      city: 'Tulum',
-      country: 'Mexico'
-    },
-    author: {
-      id: '3',
-      username: 'beach_lover',
-      email: 'maria@example.com',
-      avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-      createdAt: '2024-01-05T09:15:00Z'
-    },
-    upvotes: 156,
-    downvotes: 4,
-    createdAt: '2024-02-25T09:15:00Z',
-    updatedAt: '2024-02-25T09:15:00Z'
-  }
-];
 
 export const PostProvider = ({ children }) => {
   const { user } = useAuth();
@@ -86,14 +12,18 @@ export const PostProvider = ({ children }) => {
   const [currentPost, setCurrentPost] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [currentFilters, setCurrentFilters] = useState({ city: '', country: '' });
 
   const fetchPosts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setPosts(mockPosts);
+      const { data } = await Axios.get('/posts');
+      if (data.success) {
+        setPosts(data.posts);
+      } else {
+        throw new Error(data.message || 'Failed to fetch posts');
+      }
       setIsLoading(false);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to fetch posts');
@@ -105,10 +35,12 @@ export const PostProvider = ({ children }) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const userPosts = mockPosts.filter(post => post.author.id === userId);
-      setUserPosts(userPosts);
+      const { data } = await Axios.get(`/users/${userId}/posts`);
+      if (data.success) {
+        setUserPosts(data.posts);
+      } else {
+        throw new Error(data.message || 'Failed to fetch user posts');
+      }
       setIsLoading(false);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to fetch user posts');
@@ -121,13 +53,12 @@ export const PostProvider = ({ children }) => {
     setError(null);
     setCurrentPost(null);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const post = mockPosts.find(p => p.id === id);
-      if (!post) {
-        throw new Error('Post not found');
+      const { data } = await Axios.get(`/posts/${id}`);
+      if (data.success) {
+        setCurrentPost(data.post);
+      } else {
+        throw new Error(data.message || 'Post not found');
       }
-      setCurrentPost(post);
       setIsLoading(false);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to fetch post');
@@ -139,9 +70,6 @@ export const PostProvider = ({ children }) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
       if (!user) {
         throw new Error('You must be logged in to create a post');
       }
@@ -150,23 +78,30 @@ export const PostProvider = ({ children }) => {
         throw new Error('Location is required');
       }
       
-      const newPost = {
-        id: (mockPosts.length + 1).toString(),
-        ...postData,
-        location: postData.location,
-        author: user,
-        upvotes: 0,
-        downvotes: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+      const requestData = {
+        title: postData.title,
+        description: postData.description,
+        imageUrl: postData.imageUrl || 'https://placehold.co/600x400?text=Image+Coming+Soon',
+        lat: postData.location.lat,
+        lng: postData.location.lng,
+        address: postData.location.address,
+        city: postData.location.city,
+        country: postData.location.country
       };
       
-      mockPosts.unshift(newPost);
-      setPosts(prevPosts => [newPost, ...prevPosts]);
+      console.log('Sending post data:', requestData);
+      const { data } = await Axios.post('/posts', requestData);
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to create post');
+      }
+      
+      setPosts(prevPosts => [data.post, ...prevPosts]);
       setIsLoading(false);
       
-      return newPost;
+      return data.post;
     } catch (error) {
+      console.error('Post creation error details:', error);
       setError(error instanceof Error ? error.message : 'Failed to create post');
       setIsLoading(false);
       throw error;
@@ -177,44 +112,39 @@ export const PostProvider = ({ children }) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
       if (!user) {
         throw new Error('You must be logged in to update a post');
-      }
-      
-      const postIndex = mockPosts.findIndex(p => p.id === id);
-      if (postIndex === -1) {
-        throw new Error('Post not found');
-      }
-      
-      if (mockPosts[postIndex].author.id !== user.id) {
-        throw new Error('You can only edit your own posts');
       }
       
       if (!postData.location) {
         throw new Error('Location is required');
       }
       
-      const updatedPost = {
-        ...mockPosts[postIndex],
-        ...postData,
-        location: postData.location,
-        updatedAt: new Date().toISOString()
+      const requestData = {
+        title: postData.title,
+        description: postData.description,
+        imageUrl: postData.imageUrl,
+        lat: postData.location.lat,
+        lng: postData.location.lng,
+        address: postData.location.address,
+        city: postData.location.city,
+        country: postData.location.country
       };
       
-      mockPosts[postIndex] = updatedPost;
+      const { data } = await Axios.put(`/posts/${id}`, requestData);
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to update post');
+      }
       
       // Update posts array
       setPosts(prevPosts => prevPosts.map(p => 
-        p.id === id ? updatedPost : p
+        p.id === id ? data.post : p
       ));
       
-      setCurrentPost(updatedPost);
+      setCurrentPost(data.post);
       setIsLoading(false);
       
-      return updatedPost;
+      return data.post;
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to update post');
       setIsLoading(false);
@@ -226,24 +156,14 @@ export const PostProvider = ({ children }) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
       if (!user) {
         throw new Error('You must be logged in to delete a post');
       }
       
-      const postIndex = mockPosts.findIndex(p => p.id === id);
-      if (postIndex === -1) {
-        throw new Error('Post not found');
+      const { data } = await Axios.delete(`/posts/${id}`);
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to delete post');
       }
-      
-      if (mockPosts[postIndex].author.id !== user.id) {
-        throw new Error('You can only delete your own posts');
-      }
-      
-      // Remove post from mock data
-      mockPosts.splice(postIndex, 1);
       
       // Update posts array
       setPosts(prevPosts => prevPosts.filter(p => p.id !== id));
@@ -261,29 +181,17 @@ export const PostProvider = ({ children }) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
       if (!user) {
         throw new Error('You must be logged in to vote');
       }
       
-      const postIndex = mockPosts.findIndex(p => p.id === id);
-      if (postIndex === -1) {
-        throw new Error('Post not found');
+      const { data } = await Axios.post(`/posts/${id}/vote`, { voteType });
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to vote');
       }
       
-      let updatedPost = { ...mockPosts[postIndex] };
+      const updatedPost = data.data;
       
-      if (voteType === 'up') {
-        updatedPost.upvotes += 1;
-      } else if (voteType === 'down') {
-        updatedPost.downvotes += 1;
-      }
-      
-      mockPosts[postIndex] = updatedPost;
-      
-      // Update posts and currentPost if needed
       setPosts(prevPosts => 
         prevPosts.map(p => p.id === id ? updatedPost : p)
       );
@@ -299,57 +207,72 @@ export const PostProvider = ({ children }) => {
     }
   }, [user, currentPost]);
 
-  const searchPosts = useCallback(async (query) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 400));
-      
-      const lowerQuery = query.toLowerCase();
-      const filteredPosts = mockPosts.filter(post => 
-        post.title.toLowerCase().includes(lowerQuery) || 
-        post.description.toLowerCase().includes(lowerQuery) ||
-        post.location.city.toLowerCase().includes(lowerQuery) ||
-        post.location.country.toLowerCase().includes(lowerQuery)
-      );
-      
-      setPosts(filteredPosts);
-      setIsLoading(false);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Search failed');
-      setIsLoading(false);
-    }
-  }, []);
-
   const filterPostsByLocation = useCallback(async (city, country) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 400));
+      setCurrentFilters({ city: city || '', country: country || '' });
       
-      let filteredPosts = [...mockPosts];
-      
-      if (city) {
-        filteredPosts = filteredPosts.filter(post => 
-          post.location.city.toLowerCase() === city.toLowerCase()
-        );
+      // If no filters, just get all posts
+      if (!city && !country) {
+        return await fetchPosts();
       }
       
-      if (country) {
-        filteredPosts = filteredPosts.filter(post => 
-          post.location.country.toLowerCase() === country.toLowerCase()
-        );
-      }
+      // Build query params properly
+      const params = new URLSearchParams();
+      if (city) params.append('city', city);
+      if (country) params.append('country', country);
       
-      setPosts(filteredPosts);
+      console.log(`Filtering with params: ${params.toString()}`);
+      
+      const { data } = await Axios.get(`/posts/filter?${params.toString()}`);
+      
+      if (data.success) {
+        setPosts(data.data || []);
+      } else {
+        throw new Error(data.message || 'Filter failed');
+      }
       setIsLoading(false);
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Filter failed');
+      console.error('Filter error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to filter posts');
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchPosts]);
+
+  const searchPosts = useCallback(async (query) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (!query || query.trim() === '') {
+        // If no query but we have filters, respect them
+        if (currentFilters?.city || currentFilters?.country) {
+          return await filterPostsByLocation(currentFilters.city, currentFilters.country);
+        }
+        return await fetchPosts();
+      }
+      
+      const params = new URLSearchParams();
+      params.append('q', query);
+      
+      if (currentFilters?.city) params.append('city', currentFilters.city);
+      if (currentFilters?.country) params.append('country', currentFilters.country);
+      
+      const { data } = await Axios.get(`/posts/search?${params.toString()}`);
+      
+      if (data.success) {
+        setPosts(data.data || []);
+      } else {
+        throw new Error(data.message || 'Search failed');
+      }
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Search error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to search posts');
+      setIsLoading(false);
+    }
+  }, [fetchPosts, filterPostsByLocation, currentFilters]);
 
   const value = {
     posts,
@@ -373,7 +296,7 @@ export const PostProvider = ({ children }) => {
 
 export const usePost = () => {
   const context = useContext(PostContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('usePost must be used within a PostProvider');
   }
   return context;

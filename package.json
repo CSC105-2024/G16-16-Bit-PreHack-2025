@@ -2,6 +2,12 @@
   "name": "my-app-root",
   "private": true,
   "scripts": {
-    "dev": "npm run dev --prefix frontend"
+    "dev": "concurrently \"cd frontend && npm i && npm run dev\" \"cd backend && npm i && npm run dev:local\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "git-filter-repo": "^0.0.30"
   }
 }

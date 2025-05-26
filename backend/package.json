@@ -4,8 +4,8 @@
   "allowImportingTsExtensions": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "dev:local": "shx cp .env.local .env && npx prisma db push && tsx src/index.ts",
-    "dev:school": "shx cp .env.school .env && tsx src/index.ts",
+    "dev:local": "npx prisma db push && tsx src/index.ts",
+    "dev:school": "shx tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },

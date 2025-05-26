@@ -14,7 +14,14 @@ const Header = () => {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container-narrow py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center space-x-2">
+        <Link 
+          to="/" 
+          className="flex items-center space-x-2"
+          onClick={(e) => {
+            e.preventDefault();
+            window.location.href = '/';
+          }}
+        >
           <MapPin className="h-6 w-6 text-primary-600" />
           <span className="text-xl font-semibold text-gray-900">Pinpoint</span>
         </Link>
@@ -34,7 +41,7 @@ const Header = () => {
                 <div className="flex items-center space-x-2 cursor-pointer">
                 <Link to={`/profile/${user?.id}`} className="flex items-center space-x-2">
                   <img 
-                    src={user?.avatar} 
+                    src={user?.avatar || 'https://placehold.co/600x400/000000/FFFFFF.png?text=Profile'} 
                     alt={user?.username} 
                     className="w-8 h-8 rounded-full border border-gray-200"
                   />

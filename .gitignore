@@ -9,3 +9,5 @@ backend/.env.local
 backend/.env.school
 /node_modules
 node_modules
+backend/package-lock.json
+frontend/package-lock.json

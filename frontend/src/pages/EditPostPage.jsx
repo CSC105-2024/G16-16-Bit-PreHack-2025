@@ -26,7 +26,7 @@ const EditPostPage = () => {
       await updatePost(id, data);
       navigate(`/posts/${id}`);
     } catch (error) {
-      // Error is handled by the context
+      // Error is handled by the context w
     }
   };
   
@@ -54,23 +54,23 @@ const EditPostPage = () => {
       </div>
     );
   }
-  
-  if (currentPost && user && currentPost.author.id !== user.id) {
-    return (
-      <div className="bg-error-50 text-error-700 p-4 rounded-md">
-        <div className="flex items-start">
-          <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-          <p>You can only edit your own posts</p>
-        </div>
-        <button
-          onClick={() => navigate(-1)}
-          className="mt-4 btn-outline"
-        >
-          Go Back
-        </button>
-      </div>
-    );
-  }
+  // this dont work, no need to add
+  // if (currentPost && user && currentPost.author.id !== user.id) {
+  //   return (
+  //     <div className="bg-error-50 text-error-700 p-4 rounded-md">
+  //       <div className="flex items-start">
+  //         <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+  //         <p>You can only edit your own posts</p>
+  //       </div>
+  //       <button
+  //         onClick={() => navigate(-1)}
+  //         className="mt-4 btn-outline"
+  //       >
+  //         Go Back
+  //       </button>
+  //     </div>
+  //   );
+  // }
   
   if (!currentPost) {
     return (

@@ -4,17 +4,52 @@ import { CalendarDays, MapPin, Edit3, Trash2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePost } from '../contexts/PostContext';
 import PostCard from '../components/posts/PostCard';
-
+import { userService } from '../services/useService';
 const ProfilePage = () => {
   const { userId } = useParams();
   const { user } = useAuth();
-  const { fetchUserPosts, userPosts, deletePost, isLoading, error } = usePost();
+  const { fetchUserPosts, userPosts, deletePost, isLoading: postsLoading, error: postsError } = usePost();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
   const [deleteError, setDeleteError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [profileUser, setProfileUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   
-  const isOwnProfile = user?.id === userId;
+  const isOwnProfile = user?.id === parseInt(userId);
+  
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!userId) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // Check if it's the current user's profile
+        if (isOwnProfile && user) {
+          setProfileUser(user);
+        } else {
+          // Fetch user data using userService instead of direct Axios call
+          const userData = await userService.getProfile(userId);
+          
+          if (userData.success) {
+            setProfileUser(userData.user);
+          } else {
+            throw new Error(userData.message || 'Failed to load profile');
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load profile');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchUserProfile();
+  }, [userId, user, isOwnProfile]);
   
   useEffect(() => {
     if (userId) {
@@ -58,7 +93,7 @@ const ProfilePage = () => {
     });
   };
   
-  if (!userId || (isLoading && userPosts.length === 0)) {
+  if (!userId || (isLoading && !profileUser)) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -71,7 +106,7 @@ const ProfilePage = () => {
       <div className="bg-error-50 text-error-700 p-4 rounded-md">
         <p>Error loading profile: {error}</p>
         <button 
-          onClick={() => fetchUserPosts(userId)}
+          onClick={() => window.location.reload()}
           className="mt-2 text-sm text-primary-600 hover:text-primary-700"
         >
           Try again
@@ -80,7 +115,16 @@ const ProfilePage = () => {
     );
   }
   
-  const profileUser = userPosts.length > 0 ? userPosts[0].author : user;
+  // Fall back to the first post's author if we don't have profile data
+  const displayUser = profileUser || (userPosts.length > 0 ? userPosts[0].author : null);
+  
+  if (!displayUser) {
+    return (
+      <div className="bg-error-50 text-error-700 p-4 rounded-md">
+        <p>User profile not found</p>
+      </div>
+    );
+  }
   
   return (
     <div>
@@ -88,20 +132,20 @@ const ProfilePage = () => {
         <div className="bg-gray-200 h-32 w-full rounded-t-lg"></div>
         <div className="px-6">
           <img 
-            src={profileUser?.avatar || 'https://via.placeholder.com/200'} 
-            alt={profileUser?.username} 
+            src={displayUser?.avatar || displayUser?.avatarUrl || 'https://placehold.co/600x400/000000/FFFFFF.png?text=Profile'} 
+            alt={displayUser?.username} 
             className="absolute -top-16 w-32 h-32 rounded-full border-4 border-white shadow"
           />
           
           <div className="">
             <h1 className="text-2xl font-bold text-gray-900">
-              {profileUser?.username || 'User'}
+              {displayUser?.username || 'User'}
             </h1>
             
             <div className="flex items-center text-gray-500">
               <CalendarDays className="h-4 w-4 mr-1" />
               <span className="text-sm">
-                Member since {profileUser?.createdAt ? formatDate(profileUser.createdAt) : 'unknown'}
+                Member since {displayUser?.createdAt ? formatDate(displayUser.createdAt) : 'unknown'}
               </span>
             </div>
           </div>
@@ -111,7 +155,7 @@ const ProfilePage = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">
-            {isOwnProfile ? 'My Posts' : `${profileUser?.username}'s Posts`}
+            {isOwnProfile ? 'My Posts' : `${displayUser?.username}'s Posts`}
           </h2>
           
           {isOwnProfile && (

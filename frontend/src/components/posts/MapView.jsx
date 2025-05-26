@@ -7,7 +7,8 @@ const MapView = ({
   location, 
   isEditable = false, 
   onLocationChange,
-  height = "400px"
+  height = "400px",
+  markerTitle = "" 
 }) => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -123,6 +124,7 @@ const MapView = ({
             onCloseClick={() => setSelectedLocation(null)}
           >
             <div className="p-1">
+              {markerTitle && <p className="font-bold text-sm mb-1">{markerTitle}</p>}
               <p className="font-medium text-sm">{selectedLocation.address}</p>
               <p className="text-xs text-gray-500">{selectedLocation.city}, {selectedLocation.country}</p>
             </div>

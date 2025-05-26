@@ -58,7 +58,7 @@ const PostCard = ({ post }) => {
           <div className="flex items-center space-x-4">
             <Link to={`/profile/${post.author.id}`} className="flex items-center">
               <img 
-                src={post.author.avatar}
+                src={post.author.avatar || 'https://placehold.co/600x400/000000/FFFFFF.png?text=Profile'}
                 alt={post.author.username}
                 className="h-6 w-6 rounded-full mr-2 object-cover"
               />

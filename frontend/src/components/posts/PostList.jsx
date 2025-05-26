@@ -9,9 +9,8 @@ const PostList = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
+  const [allCountries, setAllCountries] = useState([]);
   
-  // Get unique countries and cities from posts
-  const countries = [...new Set(posts.map(post => post.location.country))];
   const cities = selectedCountry 
     ? [...new Set(posts
         .filter(post => post.location.country === selectedCountry)
@@ -22,12 +21,20 @@ const PostList = () => {
     fetchPosts();
   }, [fetchPosts]);
   
+  useEffect(() => {
+    if (posts.length > 0 && allCountries.length === 0) {
+      const uniqueCountries = [...new Set(posts.map(post => post.location.country))];
+      setAllCountries(uniqueCountries);
+    }
+  }, [posts, allCountries.length]);
+  
   const handleSearch = (e) => {
     e.preventDefault();
     searchPosts(searchQuery);
   };
   
   const handleFilterApply = () => {
+    setSearchQuery('');
     filterPostsByLocation(selectedCity, selectedCountry);
     setShowFilters(false);
   };
@@ -35,8 +42,16 @@ const PostList = () => {
   const handleClearFilters = () => {
     setSelectedCountry('');
     setSelectedCity('');
+    setSearchQuery('');
     fetchPosts();
     setShowFilters(false);
+  };
+  
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+   
   };
   
   if (isLoading && posts.length === 0) {
@@ -70,7 +85,7 @@ const PostList = () => {
               type="text"
               placeholder="Search for experiences, cities, or countries..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchInputChange}
               className="input-field pr-10 w-full"
             />
             <button
@@ -86,7 +101,7 @@ const PostList = () => {
             className="btn-outline flex items-center space-x-1 py-2"
           >
             <Filter className="h-4 w-4" />
-            <span>Filters</span>
+            <span>Filters {(selectedCity || selectedCountry) ? '(Active)' : ''}</span>
           </button>
         </div>
         
@@ -106,7 +121,7 @@ const PostList = () => {
                   className="input-field w-full"
                 >
                   <option value="">All Countries</option>
-                  {countries.map((country) => (
+                  {allCountries.map((country) => (
                     <option key={country} value={country}>
                       {country}
                     </option>

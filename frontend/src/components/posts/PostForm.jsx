@@ -1,13 +1,12 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Image, AlertCircle } from 'lucide-react';
+import { MapPin, Image } from 'lucide-react';
 import MapView from './MapView';
 
 const PostForm = ({ 
   initialData, 
   onSubmit, 
-  isLoading, 
-  error,
+  isLoading,
   submitLabel = 'Create Post'
 }) => {
   const navigate = useNavigate();
@@ -16,48 +15,37 @@ const PostForm = ({
   const [location, setLocation] = useState(initialData?.location || null);
   const [imageFile, setImageFile] = useState(null);
   const [previewImage, setPreviewImage] = useState(initialData?.imageUrl || null);
-  const [imageError, setImageError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!location) {
-      return;
-    }
-
-    if (!imageFile && !initialData?.imageUrl) {
-      setImageError('Please select an image');
-      return;
-    }
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
     
     try {
-      setIsUploading(true);
-      let imageUrl = initialData?.imageUrl || '';
-
-      if (imageFile) {
-        // Simulate image upload with a delay and generate a fake URL
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        imageUrl = URL.createObjectURL(imageFile);
-        
-        // In a real app, you would replace this with your actual image upload code
-        // For example using a service like Cloudinary, AWS S3, or your own server
-        console.log('Image would be uploaded here in a real app');
+      if (!title.trim() || !description.trim() || !location) {
+        return;
       }
-
+      
+      // Placeholder for image URL or use existing one
+      let finalImageUrl = initialData?.imageUrl || 'https://placehold.co/600x400?text=Image+Coming+Soon';
+      
       const formData = {
-        title,
-        description,
-        imageUrl,
+        title: title.trim(),
+        description: description.trim(),
+        imageUrl: finalImageUrl,
         location
       };
       
       await onSubmit(formData);
     } catch (error) {
-      setImageError('Failed to process image. Please try again.');
+      console.error('Form submission error:', error);
     } finally {
-      setIsUploading(false);
+      setIsSubmitting(false);
     }
   };
   
@@ -69,30 +57,16 @@ const PostForm = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setImageError('Please select an image file');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setImageError('Image size should be less than 5MB');
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
       return;
     }
 
     setImageFile(file);
-    setImageError(null);
     setPreviewImage(URL.createObjectURL(file));
   };
   
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
-        <div className="p-3 bg-error-50 text-error-600 rounded-md flex items-start">
-          <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
-      )}
-      
       <div className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
@@ -154,9 +128,6 @@ const PostForm = ({
               </p>
             </div>
           </div>
-          {imageError && (
-            <p className="mt-1 text-sm text-error-600">{imageError}</p>
-          )}
         </div>
         
         {previewImage && (
@@ -165,10 +136,7 @@ const PostForm = ({
               src={previewImage} 
               alt="Preview" 
               className="w-full h-48 object-cover"
-              onError={() => {
-                setImageError('Failed to load image preview');
-                setPreviewImage(null);
-              }} 
+              onError={() => setPreviewImage(null)} 
             />
           </div>
         )}
@@ -184,9 +152,6 @@ const PostForm = ({
               onLocationChange={handleLocationChange}
             />
           </div>
-          {!location && (
-            <p className="mt-1 text-sm text-error-600">Please select a location on the map</p>
-          )}
         </div>
       </div>
       

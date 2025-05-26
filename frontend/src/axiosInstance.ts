@@ -1,11 +1,8 @@
 import axios from 'axios';
 
 const Axios = axios.create({
-    baseURL: 'http://localhost:3000', 
-    withCredentials: true, // <-- Add this line
+	baseURL: 'http://localhost:3000', 
 });
-
-// Add this to your axiosInstance.js
 Axios.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -13,5 +10,4 @@ Axios.interceptors.request.use(config => {
   }
   return config;
 });
-
 export { Axios };

@@ -7,3 +7,4 @@ backend/prisma/dev.shadow.db
 frontend/package-lock.json
 backend/.env.local
 backend/.env.school
+node_modules

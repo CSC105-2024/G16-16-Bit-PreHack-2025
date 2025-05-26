@@ -3,6 +3,7 @@ import { setCookie } from 'hono/cookie';
 import { JWT } from '../util/jwt.ts';
 import { UserModel } from '../models/user.ts';
 import { PrismaClient } from '../src/generated/prisma/index.js';
+import { z } from 'zod';
 
 // Interface for request validation
 interface RegisterRequest {
@@ -19,34 +20,39 @@ interface LoginRequest {
   password: string;
 }
 
-const prisma = new PrismaClient();
+
+// Zod schema for email validation
+const emailSchema = z.string().email('Invalid email format');
 
 export class UserController {
     
   static async register(c: Context) {
-    try {      // Parse and validate request body
-      const body = await c.req.json() as RegisterRequest;
-      const { username: rawUsername, email: rawEmail, password } = body;
+    try {
+      // Parse request body
+      let { username, email, password } = await c.req.json() as RegisterRequest;
       
-      // Trim input fields and validate
-      const username = rawUsername?.trim();
-      const email = rawEmail?.trim();
+      if (username) username = username.trim();
+      if (email) email = email.trim();
+      if (password) password = password.trim();
       
-      if (!username || !email || !password?.trim()) {
+      // Validate required fields
+      if (!username || !email || !password) {
         return c.json({ 
           success: false, 
           message: 'Username, email and password are required and cannot be empty' 
         }, 400);
-      }// Email format validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
+      }
+      
+      // Validate email with Zod
+      const emailResult = emailSchema.safeParse(email);
+      if (!emailResult.success) {
         return c.json({
           success: false,
           message: 'Invalid email format'
         }, 400);
       }
 
-      // Check if user already exists
+      // Check if user exists
       const userExists = await UserModel.exists(username, email);
       if (userExists) {
         return c.json({ 
@@ -55,13 +61,8 @@ export class UserController {
         }, 400);
       }
       
-      // Create new user
-      const user = await UserModel.create(
-        email,
-        username,
-        password
-      );
-      
+      // Create user and handle authentication
+      const user = await UserModel.create(email, username, password);
       const token = JWT.generate(user.id);
       UserController.setAuthCookie(c, token);
       
@@ -80,11 +81,11 @@ export class UserController {
   }
   
   static async login(c: Context) {
-    try {      // Parse and validate request body
+    try {      
+      // Parse and validate request body
       const body = await c.req.json() as LoginRequest;
       const { email: rawEmail, username: rawUsername, password } = body;
       
-      // Trim input fields
       const email = rawEmail?.trim();
       const username = rawUsername?.trim();
       
@@ -126,11 +127,7 @@ export class UserController {
       }, 500);
     }
   }
-    /**
-   * Get the currently authenticated user's data
-   * @param c - Hono Context containing userId from auth middleware
-   * @returns User data without sensitive information
-   */
+    
   static async getCurrentUser(c: Context) {
     try {
       // Get userId from context (set by auth middleware)
@@ -155,7 +152,6 @@ export class UserController {
         }, 404);
       }
       
-      // Remove sensitive data and return user info
       const { password: _removed, ...safeUser } = user;
       
       return c.json({
@@ -164,7 +160,6 @@ export class UserController {
       });
 
     } catch (error) {
-      // Log the actual error for debugging but send a safe message to client
       console.error('Get current user error:', error);
       return c.json({ 
         success: false, 

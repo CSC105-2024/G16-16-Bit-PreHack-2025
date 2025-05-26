@@ -3,7 +3,7 @@
 
 import { Context, Next } from 'hono';
 import { getCookie } from 'hono/cookie';
-import { verifyToken } from '../util/jwt.ts';
+import { JWT } from '../util/jwt.ts';
 import { UserModel } from '../models/user.ts';
 
 export const authMiddleware = async (c: Context, next: Next) => {
@@ -24,26 +24,32 @@ export const authMiddleware = async (c: Context, next: Next) => {
       }, 401);
     }
 
-    const decoded = verifyToken(token);
-    
-    c.set('userId', decoded.userId);
-    
-    const user = await UserModel.findById(decoded.userId);
-    if (!user) {
+    try {
+      const decoded = JWT.verify(token);
+      c.set('userId', decoded.userId);
+      
+      const user = await UserModel.findById(decoded.userId);
+      if (!user) {
+        return c.json({ 
+          success: false, 
+          message: 'User not found' 
+        }, 404);
+      }
+      
+      c.set('user', user);
+      await next();
+    } catch (tokenError) {
+      console.error('Token verification error:', tokenError);
       return c.json({ 
         success: false, 
-        message: 'User not found' 
-      }, 404);
+        message: 'Invalid or expired token' 
+      }, 401);
     }
-    
-    c.set('user', user);
-
-    await next();
   } catch (error) {
     console.error('Authentication error:', error);
     return c.json({ 
       success: false, 
-      message: 'Invalid or expired token' 
-    }, 401);
+      message: 'Authentication failed' 
+    }, 500);
   }
 };

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Axios } from '../asiosInstance';
+import { Axios } from '../axiosInstance';
 
 
 // Create the context
@@ -39,27 +39,16 @@ export const AuthProvider = ({ children }) => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 800));
       
-
-      
       const { data } = await Axios.post('/auth/login', { email, password });
-
   
-      if(data) setUser(data.user)
+      if(data) {
+        setUser(data.user);
+        // Store both user and token in localStorage
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('token', data.token);
+        setIsAuthenticated(true);
+      }
       
-      // const user = mockUsers.find(u => u.email === email && u.password === password);
-      
-      // if (!user) {
-      //   throw new Error('Invalid email or password');
-      // }
-      
-      // // Remove password from user object before storing
-      // const { password: _, ...userWithoutPassword } = user;
-      
-      // Store user in localStorage (in a real app, we would store a token)
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      setUser(data.user);
-      setIsAuthenticated(true);
       setIsLoading(false);
     } catch (error) {
       console.error('Login error:', error);
@@ -103,6 +92,8 @@ export const AuthProvider = ({ children }) => {
       const { data } = await Axios.post('/auth/register', { email, username, password });
       console.log('Register response:', data);
       localStorage.setItem('user', JSON.stringify(data.user));
+      // Also store the token
+      localStorage.setItem('token', data.token);
       
       setUser(data.user);
       setIsAuthenticated(true);
@@ -117,19 +108,23 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async () => {
     await Axios.post('/auth/logout');
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     setUser(null);
     setIsAuthenticated(false);
   }, []);
 
   const checkAuth = useCallback(() => {
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    const storedToken = localStorage.getItem('token');
+    
+    if (storedUser && storedToken) {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         setIsAuthenticated(true);
       } catch (error) {
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
         setUser(null);
         setIsAuthenticated(false);
       }

@@ -5,7 +5,7 @@ import { UserController } from '../controllers/user.controller.ts';
 import { PostController } from '../controllers/post.controller.ts';
 import { authMiddleware } from '../middleware/auth.middleware.ts';
 import { setCookie } from 'hono/cookie';
-
+import { UploadController } from '../controllers/upload.controller.ts';
 const api = new Hono();
 
 // Create protected routes for authenticated endpoints
@@ -35,7 +35,8 @@ api.get('/posts/filter', PostController.filterPostsByLocation);
 api.get('/posts/search', PostController.searchPosts);           
 api.get('/posts/:id', PostController.getPostById);
 api.get('/users/:userId/posts', PostController.getUserPosts);
-
+api.post('/upload', authMiddleware, UploadController.uploadImage);
+api.get('/images/:publicId', UploadController.getImage);
 // everything below needs auth token
 protectedRoutes.use('*', authMiddleware);
 protectedRoutes.get('/users/me', UserController.getCurrentUser);

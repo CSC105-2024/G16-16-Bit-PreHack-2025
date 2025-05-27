@@ -13,12 +13,21 @@ const PostDetailPage = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [userVote, setUserVote] = useState(null); // 'up', 'down', or null
   
   useEffect(() => {
     if (id) {
       fetchPostById(id);
     }
   }, [id, fetchPostById]);
+  
+  // Check if user has already voted on this post
+  useEffect(() => {
+    if (isAuthenticated && currentPost && currentPost.votes && user) {
+      const existingVote = currentPost.votes.find(vote => vote.userId === user.id);
+      setUserVote(existingVote ? existingVote.type : null);
+    }
+  }, [isAuthenticated, currentPost, user]);
   
   useEffect(() => {
     if (currentPost) {
@@ -44,6 +53,8 @@ const PostDetailPage = () => {
     
     try {
       await votePost(id, type);
+      // Update local state to reflect the vote
+      setUserVote(userVote === type ? null : type);
     } catch (error) {
       console.error('Failed to vote', error);
     }
@@ -169,29 +180,49 @@ const PostDetailPage = () => {
               <button 
                 onClick={() => handleVote('up')}
                 disabled={!isAuthenticated}
-                className={`flex items-center space-x-1 p-2 rounded-md ${
-                  isAuthenticated 
-                    ? 'hover:bg-gray-100' 
-                    : 'opacity-60 cursor-not-allowed'
+                className={`flex items-center space-x-1 p-2 rounded-md transition-all duration-200 ${
+                  !isAuthenticated 
+                    ? 'opacity-60 cursor-not-allowed'
+                    : userVote === 'up'
+                      ? 'bg-green-100 hover:bg-green-200 shadow-sm'
+                      : 'hover:bg-gray-100'
                 }`}
                 title={isAuthenticated ? 'Upvote' : 'Login to vote'}
               >
-                <ThumbsUp className="h-5 w-5 text-success-600" />
-                <span className="font-medium">{currentPost.upvotes}</span>
+                <ThumbsUp 
+                  className={`h-5 w-5 transition-colors duration-200 ${
+                    userVote === 'up' ? 'text-green-700' : 'text-green-600'
+                  }`} 
+                />
+                <span className={`font-medium transition-colors duration-200 ${
+                  userVote === 'up' ? 'text-green-700' : 'text-green-600'
+                }`}>
+                  {currentPost.upvotes}
+                </span>
               </button>
               
               <button 
                 onClick={() => handleVote('down')}
                 disabled={!isAuthenticated}
-                className={`flex items-center space-x-1 p-2 rounded-md ${
-                  isAuthenticated 
-                    ? 'hover:bg-gray-100' 
-                    : 'opacity-60 cursor-not-allowed'
+                className={`flex items-center space-x-1 p-2 rounded-md transition-all duration-200 ${
+                  !isAuthenticated 
+                    ? 'opacity-60 cursor-not-allowed'
+                    : userVote === 'down'
+                      ? 'bg-pink-100 hover:bg-pink-200 shadow-sm'
+                      : 'hover:bg-gray-100'
                 }`}
                 title={isAuthenticated ? 'Downvote' : 'Login to vote'}
               >
-                <ThumbsDown className="h-5 w-5 text-error-600" />
-                <span className="font-medium">{currentPost.downvotes}</span>
+                <ThumbsDown 
+                  className={`h-5 w-5 transition-colors duration-200 ${
+                    userVote === 'down' ? 'text-[#d91570]' : 'text-[#ff2b95]'
+                  }`} 
+                />
+                <span className={`font-medium transition-colors duration-200 ${
+                  userVote === 'down' ? 'text-[#d91570]' : 'text-[#ff2b95]'
+                }`}>
+                  {currentPost.downvotes}
+                </span>
               </button>
             </div>
           </div>

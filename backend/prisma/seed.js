@@ -21,7 +21,7 @@ async function main() {
         email: 'test@example.com',
         username: 'testuser',
         password: hashedPassword,
-        avatarUrl: 'https://placehold.co/400x400/3498db/ffffff?text=T'
+        avatarUrl: 'https://res.cloudinary.com/dboeqtx65/image/upload/v1748360769/pinpoint_1748360767400.png'
       }
     });
 

@@ -1,11 +1,21 @@
 import { Link } from 'react-router-dom';
 import { MapPin, ThumbsUp, ThumbsDown, Calendar } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePost } from '../../contexts/PostContext';
 
 const PostCard = ({ post }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { votePost } = usePost();
+  const [userVote, setUserVote] = useState(null); // 'up', 'down', or null
+  
+  // Check if user has already voted on this post
+  useEffect(() => {
+    if (isAuthenticated && post.votes && user) {
+      const existingVote = post.votes.find(vote => vote.userId === user.id);
+      setUserVote(existingVote ? existingVote.type : null);
+    }
+  }, [isAuthenticated, post.votes, user]);
   
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -23,6 +33,8 @@ const PostCard = ({ post }) => {
     
     try {
       await votePost(post.id, type);
+      // Update local state to reflect the vote
+      setUserVote(userVote === type ? null : type);
     } catch (error) {
       console.error('Failed to vote', error);
     }
@@ -75,21 +87,49 @@ const PostCard = ({ post }) => {
             <button 
               onClick={() => handleVote('up')}
               disabled={!isAuthenticated}
-              className={`flex items-center p-1 rounded-md ${isAuthenticated ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed'}`}
+              className={`flex items-center p-1 rounded-md transition-all duration-200 ${
+                !isAuthenticated 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : userVote === 'up'
+                    ? 'bg-green-100 hover:bg-green-200 shadow-sm'
+                    : 'hover:bg-gray-100'
+              }`}
               title={isAuthenticated ? 'Upvote' : 'Login to vote'}
             >
-              <ThumbsUp className="h-4 w-4 text-green-600 mr-1" />
-              <span className="text-green-600 font-semibold">{post.upvotes}</span>
+              <ThumbsUp 
+                className={`h-4 w-4 mr-1 transition-colors duration-200 ${
+                  userVote === 'up' ? 'text-green-700' : 'text-green-600'
+                }`} 
+              />
+              <span className={`font-semibold transition-colors duration-200 ${
+                userVote === 'up' ? 'text-green-700' : 'text-green-600'
+              }`}>
+                {post.upvotes}
+              </span>
             </button>
             
             <button 
               onClick={() => handleVote('down')}
               disabled={!isAuthenticated}
-              className={`flex items-center p-1 rounded-md ${isAuthenticated ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed'}`}
+              className={`flex items-center p-1 rounded-md transition-all duration-200 ${
+                !isAuthenticated 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : userVote === 'down'
+                    ? 'bg-pink-100 hover:bg-pink-200 shadow-sm'
+                    : 'hover:bg-gray-100'
+              }`}
               title={isAuthenticated ? 'Downvote' : 'Login to vote'}
             >
-              <ThumbsDown className="h-4 w-4 mr-1 text-[#ff2b95]" />
-              <span className="font-semibold text-[#ff2b95]">{post.downvotes}</span>
+              <ThumbsDown 
+                className={`h-4 w-4 mr-1 transition-colors duration-200 ${
+                  userVote === 'down' ? 'text-[#d91570]' : 'text-[#ff2b95]'
+                }`} 
+              />
+              <span className={`font-semibold transition-colors duration-200 ${
+                userVote === 'down' ? 'text-[#d91570]' : 'text-[#ff2b95]'
+              }`}>
+                {post.downvotes}
+              </span>
             </button>
           </div>
         </div>

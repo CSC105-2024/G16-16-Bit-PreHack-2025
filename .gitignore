@@ -13,4 +13,4 @@ backend/package-lock.json
 frontend/package-lock.json
 package-lock.json
 backend/prisma/dev.db
-backend/restore-db.cjs
+backend/prisma/dev.db-journal

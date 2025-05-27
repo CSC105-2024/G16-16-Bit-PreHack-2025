@@ -22,6 +22,39 @@ const MapView = ({
     lng: location?.lng || -74.0060
   });
 
+  // req user's location on component mount if no location is provided
+  useEffect(() => {
+    if (!location && isEditable && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+          
+          // Center the map at user's location
+          setCenter({
+            lat: userLat,
+            lng: userLng
+          });
+          
+          if (onLocationChange && isEditable) {
+            // Get address details for the user's location
+            const locationDetails = await reverseGeocode(userLat, userLng);
+            
+            // Set as the current location
+            onLocationChange({
+              lat: userLat,
+              lng: userLng,
+              ...locationDetails
+            });
+          }
+        },
+        (error) => {
+          console.log("Geolocation error or permission denied:", error);
+        }
+      );
+    }
+  }, [isLoaded, location, isEditable, onLocationChange]);
+
   useEffect(() => {
     if (location) {
       setCenter({ lat: location.lat, lng: location.lng });

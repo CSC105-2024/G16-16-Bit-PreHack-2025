@@ -1,26 +1,35 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Image, AlertCircle } from 'lucide-react';
 import MapView from './MapView';
 import { uploadImage, validateImageFile } from '../../utils/uploadImage';
 
 const PostForm = ({ 
-  initialData, 
+  initialValues, 
   onSubmit, 
   isLoading,
   error,
   submitLabel = 'Create Post'
 }) => {
   const navigate = useNavigate();
-  const [title, setTitle] = useState(initialData?.title || '');
-  const [description, setDescription] = useState(initialData?.description || '');
-  const [location, setLocation] = useState(initialData?.location || null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState(null);
   const [imageFile, setImageFile] = useState(null);
-  const [previewImage, setPreviewImage] = useState(initialData?.imageUrl || null);
+  const [previewImage, setPreviewImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageError, setImageError] = useState(null);
   const fileInputRef = useRef(null);
+  
+  useEffect(() => {
+    if (initialValues) {
+      setTitle(initialValues.title || '');
+      setDescription(initialValues.description || '');
+      setLocation(initialValues.location || null);
+      setPreviewImage(initialValues.imageUrl || null);
+    }
+  }, [initialValues]);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,7 +44,7 @@ const PostForm = ({
         return;
       }
       
-      let finalImageUrl = initialData?.imageUrl || 'https://placehold.co/600x400?text=Image+Coming+Soon';
+      let finalImageUrl = initialValues?.imageUrl || 'https://placehold.co/600x400?text=Image+Coming+Soon';
       
       // If there's a new file, upload it
       if (imageFile) {

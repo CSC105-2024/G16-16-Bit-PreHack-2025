@@ -191,13 +191,13 @@ const ProfilePage = () => {
             <img 
               src={displayUser?.avatar || displayUser?.avatarUrl || 'https://placehold.co/600x400/000000/FFFFFF.png?text=Profile'} 
               alt={displayUser?.username} 
-              className={`absolute -top-29 w-32 h-32 rounded-full border-4 border-white shadow ${isOwnProfile ? 'cursor-pointer hover:opacity-90' : ''}`}
+              className={`absolute -top-29 w-32 h-32 rounded-full border-4 border-white shadow object-cover object-center ${isOwnProfile ? 'cursor-pointer hover:opacity-90' : ''}`}
               onClick={handleAvatarClick}
             />
             
             {isOwnProfile && (
               <div 
-                className={`absolute -top-16 w-32 h-32 rounded-full flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity ${isUploadingAvatar ? 'opacity-100' : ''}`}
+                className={`absolute -top-29 w-32 h-32 rounded-full flex items-center justify-center bg-black/50 bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity ${isUploadingAvatar ? 'opacity-100' : ''}`}
                 onClick={handleAvatarClick}
               >
                 {isUploadingAvatar ? (

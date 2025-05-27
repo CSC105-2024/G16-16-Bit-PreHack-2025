@@ -38,12 +38,12 @@ const Header = () => {
               </Link>
               
               <div className="relative group">
-                <div className="flex items-center space-x-2 cursor-pointer">
-                  <Link to={`/profile/${user?.id}`} className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 cursor-pointer ">
+                  <Link to={`/profile/${user?.id}`} className="flex items-center space-x-2 ">
                     <img 
                       src={user?.avatarUrl || 'https://placehold.co/600x400/000000/FFFFFF.png?text=Profile'} 
                       alt={user?.username} 
-                      className="w-8 h-8 rounded-full border border-gray-200"
+                      className="w-8 h-8 rounded-full border border-gray-200 object-cover object-center"
                     />
                     <span className="hidden sm:inline text-sm font-medium text-gray-700">
                       {user?.username}
@@ -51,7 +51,7 @@ const Header = () => {
                   </Link>
                 </div>
                 
-                <div className="hidden group-hover:block absolute right-0 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                <div className="hidden group-hover:block absolute right-0 w-48 bg-white rounded-md shadow-lg py-1 z-50 ">
                   <Link 
                     to={`/profile/${user?.id}`} 
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

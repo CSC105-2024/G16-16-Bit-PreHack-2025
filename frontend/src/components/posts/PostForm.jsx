@@ -2,11 +2,13 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Image } from 'lucide-react';
 import MapView from './MapView';
+import { Axios } from '../../axiosInstance';
 
 const PostForm = ({ 
   initialData, 
   onSubmit, 
   isLoading,
+  error,
   submitLabel = 'Create Post'
 }) => {
   const navigate = useNavigate();
@@ -19,10 +21,49 @@ const PostForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   
+  const uploadImage = async (file) => {
+    setIsUploading(true);
+    
+    try {
+      // Convert file to base64
+      const base64String = await fileToBase64(file);
+      
+      const { data } = await Axios.post('/upload', {
+        file: {
+          base64String,
+          filename: file.name,
+          contentType: file.type
+        }
+      });
+      
+      if (data.success) {
+        return data.secureUrl || data.url;
+      }
+      
+      // If not successful, just return placeholder
+      return 'https://placehold.co/600x400?text=Image+Coming+Soon';
+    } catch (error) {
+      console.error('Image upload error:', error);
+      // Return placeholder image on error
+      return 'https://placehold.co/600x400?text=Image+Coming+Soon';
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (isSubmitting) return;
+    if (isSubmitting || isUploading) return;
     
     setIsSubmitting(true);
     
@@ -31,8 +72,13 @@ const PostForm = ({
         return;
       }
       
-      // Placeholder for image URL or use existing one
+      // Use existing image URL if no new file was selected
       let finalImageUrl = initialData?.imageUrl || 'https://placehold.co/600x400?text=Image+Coming+Soon';
+      
+      // If there's a new file, upload it
+      if (imageFile) {
+        finalImageUrl = await uploadImage(imageFile);
+      }
       
       const formData = {
         title: title.trim(),
@@ -57,7 +103,9 @@ const PostForm = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Simple check without error message display
     if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      console.warn('Invalid file selected');
       return;
     }
 

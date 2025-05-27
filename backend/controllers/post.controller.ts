@@ -4,33 +4,37 @@ import { PrismaClient } from '../src/generated/prisma/index.js';
 const prisma = new PrismaClient();
 
 export class PostController {
-  // Helper method to format posts consistently
-  private static formatPost(post: any) {
-    return {
-      id: post.id.toString(),
-      title: post.title,
-      description: post.description,
-      imageUrl: post.imageUrl,
-      location: {
-        lat: post.lat,
-        lng: post.lng,
-        address: post.address,
-        city: post.city,
-        country: post.country
-      },
-      author: {
-        id: post.author.id.toString(),
-        username: post.author.username,
-        email: post.author.email,
-        avatar: post.author.avatarUrl,
-        createdAt: post.author.createdAt.toISOString()
-      },
-      upvotes: post.upvotes,
-      downvotes: post.downvotes,
-      createdAt: post.createdAt.toISOString(),
-      updatedAt: post.updatedAt.toISOString()
-    };
-  }
+
+private static formatPost(post: any, currentUserId?: number) {
+  return {
+    id: post.id.toString(),
+    title: post.title,
+    description: post.description,
+    imageUrl: post.imageUrl,
+    location: {
+      lat: post.lat,
+      lng: post.lng,
+      address: post.address,
+      city: post.city,
+      country: post.country
+    },
+    author: {
+      id: post.author.id.toString(),
+      username: post.author.username,
+      email: post.author.email,
+      avatar: post.author.avatarUrl,
+      createdAt: post.author.createdAt.toISOString()
+    },
+    upvotes: post.upvotes,
+    downvotes: post.downvotes,
+    // Include user's vote status if votes are included
+    userVote: currentUserId && post.votes ? 
+      post.votes.find((vote: any) => vote.userId === currentUserId)?.type?.toLowerCase() || null 
+      : null,
+    createdAt: post.createdAt.toISOString(),
+    updatedAt: post.updatedAt.toISOString()
+  };
+}
 
   static async createPost(c: Context) {
     try {
@@ -222,50 +226,129 @@ export class PostController {
     }
   }
 
-  static async votePost(c: Context) {
-    try {
-      const postId = parseInt(c.req.param('id'));
-      const { voteType } = await c.req.json();
+static async votePost(c: Context) {
+  try {
+    const postId = parseInt(c.req.param('id'));
+    const { voteType } = await c.req.json();
+    const user = c.get('user'); // Get the authenticated user
 
-      // Validate inputs
-      if (isNaN(postId) || (voteType !== 'up' && voteType !== 'down')) {
-        return c.json({ 
-          success: false, 
-          message: isNaN(postId) ? 'Invalid post ID' : 'Invalid vote type' 
-        }, 400);
+    // Validate inputs
+    if (isNaN(postId) || (voteType !== 'up' && voteType !== 'down')) {
+      return c.json({ 
+        success: false, 
+        message: isNaN(postId) ? 'Invalid post ID' : 'Invalid vote type' 
+      }, 400);
+    }
+
+    // Check if user is authenticated
+    if (!user) {
+      return c.json({ success: false, message: 'Authentication required' }, 401);
+    }
+
+    // Check if post exists
+    const post = await prisma.post.findUnique({
+      where: { id: postId }
+    });
+
+    if (!post) {
+      return c.json({ success: false, message: 'Post not found' }, 404);
+    }
+
+    // Check if user has already voted on this post
+    const existingVote = await prisma.vote.findUnique({
+      where: {
+        userId_postId: {
+          userId: user.id,
+          postId: postId
+        }
       }
+    });
 
-      const post = await prisma.post.findUnique({
-        where: { id: postId }
+    const voteTypeEnum = voteType === 'up' ? 'UP' : 'DOWN';
+
+    if (existingVote) {
+      if (existingVote.type === voteTypeEnum) {
+        // User clicked same vote type - remove the vote (toggle off)
+        await prisma.vote.delete({
+          where: { id: existingVote.id }
+        });
+
+        // Update post counters (decrement)
+        await prisma.post.update({
+          where: { id: postId },
+          data: {
+            upvotes: voteType === 'up' ? { decrement: 1 } : undefined,
+            downvotes: voteType === 'down' ? { decrement: 1 } : undefined
+          }
+        });
+      } else {
+        // User clicked different vote type - update the vote
+        await prisma.vote.update({
+          where: { id: existingVote.id },
+          data: { type: voteTypeEnum }
+        });
+
+        // Update post counters (adjust both counters)
+        if (voteType === 'up') {
+          // Changing from down to up
+          await prisma.post.update({
+            where: { id: postId },
+            data: {
+              upvotes: { increment: 1 },
+              downvotes: { decrement: 1 }
+            }
+          });
+        } else {
+          // Changing from up to down
+          await prisma.post.update({
+            where: { id: postId },
+            data: {
+              upvotes: { decrement: 1 },
+              downvotes: { increment: 1 }
+            }
+          });
+        }
+      }
+    } else {
+      // User hasn't voted yet - create new vote
+      await prisma.vote.create({
+        data: {
+          type: voteTypeEnum,
+          userId: user.id,
+          postId: postId
+        }
       });
 
-      if (!post) {
-        return c.json({ success: false, message: 'Post not found' }, 404);
-      }
-
-      const updatedPost = await prisma.post.update({
+      // Update post counters (increment)
+      await prisma.post.update({
         where: { id: postId },
         data: {
           upvotes: voteType === 'up' ? { increment: 1 } : undefined,
           downvotes: voteType === 'down' ? { increment: 1 } : undefined
-        },
-        include: { author: true }
-      }).catch(() => null);
-
-      if (!updatedPost) {
-        return c.json({ success: false, message: 'Post not found' }, 404);
-      }
-
-      // Format the response
-      return c.json({
-        success: true,
-        data: PostController.formatPost(updatedPost)
+        }
       });
-    } catch (error) {
-      console.error('Error voting on post:', error);
-      return c.json({ success: false, message: 'Internal server error' }, 500);
     }
+
+    // Fetch updated post with current vote counts
+    const updatedPost = await prisma.post.findUnique({
+      where: { id: postId },
+      include: { author: true }
+    });
+
+    if (!updatedPost) {
+      return c.json({ success: false, message: 'Post not found' }, 404);
+    }
+
+    // Format the response
+    return c.json({
+      success: true,
+      data: PostController.formatPost(updatedPost)
+    });
+  } catch (error) {
+    console.error('Error voting on post:', error);
+    return c.json({ success: false, message: 'Internal server error' }, 500);
   }
+}
 
   static async searchPosts(c: Context) {
     try {

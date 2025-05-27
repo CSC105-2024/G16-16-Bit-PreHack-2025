@@ -176,8 +176,8 @@ const PostDetailPage = () => {
                 }`}
                 title={isAuthenticated ? 'Upvote' : 'Login to vote'}
               >
-                <ThumbsUp className="h-5 w-5 text-success-600" />
-                <span className="font-medium">{currentPost.upvotes}</span>
+                <ThumbsUp className="h-5 w-5 text-green-600" />
+                <span className="font-medium text-green-600">{currentPost.upvotes}</span>
               </button>
               
               <button 
@@ -190,8 +190,8 @@ const PostDetailPage = () => {
                 }`}
                 title={isAuthenticated ? 'Downvote' : 'Login to vote'}
               >
-                <ThumbsDown className="h-5 w-5 text-error-600" />
-                <span className="font-medium">{currentPost.downvotes}</span>
+                <ThumbsDown className="h-5 w-5 text-error-600 text-[#ff2b95]" />
+                <span className="font-medium text-[#ff2b95]">{currentPost.downvotes}</span>
               </button>
             </div>
           </div>

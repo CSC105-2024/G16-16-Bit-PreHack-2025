@@ -113,22 +113,42 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   }, []);
 
-  const checkAuth = useCallback(() => {
+  const checkAuth = useCallback(async () => {
     const storedUser = localStorage.getItem('user');
     const storedToken = localStorage.getItem('token');
     
     if (storedUser && storedToken) {
       try {
+        // Set initial state from localStorage for faster rendering
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         setIsAuthenticated(true);
+        
+        // also verify with the backend and get fresh data
+        const { data } = await Axios.get('/users/me');
+        if (data.success && data.user) {
+          // upd with fresh user data from the server
+          setUser(data.user);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        } else {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          setUser(null);
+          setIsAuthenticated(false);
+        }
       } catch (error) {
+        console.error('Auth verification error:', error);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         setUser(null);
         setIsAuthenticated(false);
       }
     }
+  }, []);
+
+  const updateUserData = useCallback((updatedUserData) => {
+    setUser(updatedUserData);
+    localStorage.setItem('user', JSON.stringify(updatedUserData));
   }, []);
 
   useEffect(() => {
@@ -143,7 +163,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    checkAuth,
+    updateUserData
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

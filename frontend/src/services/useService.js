@@ -39,6 +39,6 @@ export const userService = {
     } catch (error) {
       console.error('Error updating user profile:', error);
       throw error;
-    } 
+    }
   }
 };

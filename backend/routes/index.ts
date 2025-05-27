@@ -1,6 +1,4 @@
 import { Hono } from 'hono';
-import { serve } from '@hono/node-server';
-import { serveStatic } from '@hono/node-server/serve-static';
 import { UserController } from '../controllers/user.controller.ts';
 import { PostController } from '../controllers/post.controller.ts';
 import { authMiddleware } from '../middleware/auth.middleware.ts';
@@ -41,7 +39,7 @@ api.get('/images/:publicId', UploadController.getImage);
 protectedRoutes.use('*', authMiddleware);
 protectedRoutes.get('/users/me', UserController.getCurrentUser);
 protectedRoutes.get('/me', UserController.isAuthenticated);
-
+protectedRoutes.put('/users/me', UserController.updateProfile);
 // Post routes that require authentication
 protectedRoutes.post('/posts', PostController.createPost);
 protectedRoutes.put('/posts/:id', PostController.updatePost);

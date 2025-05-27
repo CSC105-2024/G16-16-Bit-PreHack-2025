@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { CalendarDays, MapPin, Edit3, Trash2, AlertCircle } from 'lucide-react';
+import { CalendarDays, MapPin, Edit3, Trash2, AlertCircle, Camera, Loader } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePost } from '../contexts/PostContext';
 import PostCard from '../components/posts/PostCard';
 import { userService } from '../services/useService';
+import { uploadImage, validateImageFile } from '../utils/uploadImage';
+
 const ProfilePage = () => {
   const { userId } = useParams();
-  const { user } = useAuth();
+  const { user, updateUserData } = useAuth();
   const { fetchUserPosts, userPosts, deletePost, isLoading: postsLoading, error: postsError } = usePost();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
@@ -16,6 +18,11 @@ const ProfilePage = () => {
   const [profileUser, setProfileUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Avatar upload state
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState(null);
+  const fileInputRef = useRef(null);
   
   const isOwnProfile = user?.id === parseInt(userId);
   
@@ -31,7 +38,6 @@ const ProfilePage = () => {
         if (isOwnProfile && user) {
           setProfileUser(user);
         } else {
-          // Fetch user data using userService instead of direct Axios call
           const userData = await userService.getProfile(userId);
           
           if (userData.success) {
@@ -93,6 +99,57 @@ const ProfilePage = () => {
     });
   };
   
+  const handleAvatarClick = () => {
+    if (isOwnProfile && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setAvatarError(validation.error);
+      return;
+    }
+    
+    setIsUploadingAvatar(true);
+    setAvatarError(null);
+    
+    try {
+      const result = await uploadImage(file);
+      
+      if (result.success) {
+        const updateResult = await userService.updateProfile({ avatarUrl: result.url });
+        
+        if (updateResult.success) {
+          setProfileUser(prev => ({
+            ...prev,
+            avatarUrl: result.url
+          }));
+          
+          if (updateUserData) {
+            updateUserData({
+              ...user,
+              avatarUrl: result.url
+            });
+          }
+        } else {
+          throw new Error(updateResult.message || 'Failed to update avatar');
+        }
+      } else {
+        throw new Error(result.error || 'Failed to upload avatar');
+      }
+    } catch (err) {
+      console.error('Error uploading avatar:', err);
+      setAvatarError(err.message || 'Failed to update avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+  
   if (!userId || (isLoading && !profileUser)) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
@@ -115,7 +172,6 @@ const ProfilePage = () => {
     );
   }
   
-  // Fall back to the first post's author if we don't have profile data
   const displayUser = profileUser || (userPosts.length > 0 ? userPosts[0].author : null);
   
   if (!displayUser) {
@@ -128,17 +184,47 @@ const ProfilePage = () => {
   
   return (
     <div>
-      <div className="bg-white rounded-lg shadow mb-8 h-48 relative">
+      <div className="bg-white rounded-lg shadow mb-8 h-52 relative">
         <div className="bg-gray-200 h-32 w-full rounded-t-lg"></div>
-        <div className="px-6">
-          <img 
-            src={displayUser?.avatar || displayUser?.avatarUrl || 'https://placehold.co/600x400/000000/FFFFFF.png?text=Profile'} 
-            alt={displayUser?.username} 
-            className="absolute -top-16 w-32 h-32 rounded-full border-4 border-white shadow"
-          />
+        <div className="px-6 ">
+          <div className="relative">
+            <img 
+              src={displayUser?.avatar || displayUser?.avatarUrl || 'https://placehold.co/600x400/000000/FFFFFF.png?text=Profile'} 
+              alt={displayUser?.username} 
+              className={`absolute -top-29 w-32 h-32 rounded-full border-4 border-white shadow ${isOwnProfile ? 'cursor-pointer hover:opacity-90' : ''}`}
+              onClick={handleAvatarClick}
+            />
+            
+            {isOwnProfile && (
+              <div 
+                className={`absolute -top-16 w-32 h-32 rounded-full flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity ${isUploadingAvatar ? 'opacity-100' : ''}`}
+                onClick={handleAvatarClick}
+              >
+                {isUploadingAvatar ? (
+                  <Loader className="h-10 w-10 text-white animate-spin" />
+                ) : (
+                  <Camera className="h-10 w-10 text-white" />
+                )}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                />
+              </div>
+            )}
+          </div>
+          
+          {avatarError && (
+            <div className="mt-2 bg-error-50 text-error-700 p-2 rounded-md mb-2 flex items-start">
+              <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+              <p className="text-sm">{avatarError}</p>
+            </div>
+          )}
           
           <div className="">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 pb-2">
               {displayUser?.username || 'User'}
             </h1>
             
@@ -214,7 +300,7 @@ const ProfilePage = () => {
       
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
               Delete Post

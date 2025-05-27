@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Image } from 'lucide-react';
+import { MapPin, Image, AlertCircle } from 'lucide-react';
 import MapView from './MapView';
-import { Axios } from '../../axiosInstance';
+import { uploadImage, validateImageFile } from '../../utils/uploadImage';
 
 const PostForm = ({ 
   initialData, 
@@ -19,46 +19,8 @@ const PostForm = ({
   const [previewImage, setPreviewImage] = useState(initialData?.imageUrl || null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageError, setImageError] = useState(null);
   const fileInputRef = useRef(null);
-  
-  const uploadImage = async (file) => {
-    setIsUploading(true);
-    
-    try {
-      // Convert file to base64
-      const base64String = await fileToBase64(file);
-      
-      const { data } = await Axios.post('/upload', {
-        file: {
-          base64String,
-          filename: file.name,
-          contentType: file.type
-        }
-      });
-      
-      if (data.success) {
-        return data.secureUrl || data.url;
-      }
-      
-      // If not successful, just return placeholder
-      return 'https://placehold.co/600x400?text=Image+Coming+Soon';
-    } catch (error) {
-      console.error('Image upload error:', error);
-      // Return placeholder image on error
-      return 'https://placehold.co/600x400?text=Image+Coming+Soon';
-    } finally {
-      setIsUploading(false);
-    }
-  };
-  
-  const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,18 +28,27 @@ const PostForm = ({
     if (isSubmitting || isUploading) return;
     
     setIsSubmitting(true);
+    setImageError(null);
     
     try {
       if (!title.trim() || !description.trim() || !location) {
         return;
       }
       
-      // Use existing image URL if no new file was selected
       let finalImageUrl = initialData?.imageUrl || 'https://placehold.co/600x400?text=Image+Coming+Soon';
       
       // If there's a new file, upload it
       if (imageFile) {
-        finalImageUrl = await uploadImage(imageFile);
+        setIsUploading(true);
+        const result = await uploadImage(imageFile);
+        setIsUploading(false);
+        
+        if (result.success) {
+          finalImageUrl = result.url;
+        } else {
+          setImageError(result.error);
+          finalImageUrl = result.url;
+        }
       }
       
       const formData = {
@@ -90,6 +61,7 @@ const PostForm = ({
       await onSubmit(formData);
     } catch (error) {
       console.error('Form submission error:', error);
+      setImageError('An error occurred while submitting the form');
     } finally {
       setIsSubmitting(false);
     }
@@ -103,14 +75,15 @@ const PostForm = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Simple check without error message display
-    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
-      console.warn('Invalid file selected');
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setImageError(validation.error);
       return;
     }
 
     setImageFile(file);
     setPreviewImage(URL.createObjectURL(file));
+    setImageError(null);
   };
   
   return (
@@ -201,6 +174,13 @@ const PostForm = ({
             />
           </div>
         </div>
+        
+        {imageError && (
+          <div className="bg-error-50 text-error-700 p-2 rounded-md mb-2 flex items-start">
+            <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+            <p className="text-sm">{imageError}</p>
+          </div>
+        )}
       </div>
       
       <div className="flex items-center justify-end space-x-3 pt-4">

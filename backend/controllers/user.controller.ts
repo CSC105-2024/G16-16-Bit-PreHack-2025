@@ -2,10 +2,8 @@ import { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
 import { JWT } from '../util/jwt.ts';
 import { UserModel } from '../models/user.ts';
-import { PrismaClient } from '../src/generated/prisma/index.js';
 import { z } from 'zod';
 
-// Interface for request validation
 interface RegisterRequest {
   username: string;
   email: string;
@@ -227,5 +225,46 @@ export class UserController {
         path: '/',
         maxAge: 7 * 24 * 60 * 60,
     });
+  }
+
+  static async updateProfile(c: Context) {
+    try {
+      const userId = c.get('userId');
+      const { avatarUrl } = await c.req.json();
+      
+      if (!userId) {
+        return c.json({ 
+          success: false, 
+          message: 'Not authenticated' 
+        }, 401);
+      }
+      
+      // Update the user's avatar URL
+      if (avatarUrl) {
+        await UserModel.updateAvatar(userId, avatarUrl);
+      }
+      
+      // Get the updated user
+      const updatedUser = await UserModel.findById(userId);
+      if (!updatedUser) {
+        return c.json({ 
+          success: false, 
+          message: 'User not found' 
+        }, 404);
+      }
+      
+      const { password: _, ...safeUser } = updatedUser;
+      
+      return c.json({
+        success: true,
+        user: safeUser
+      });
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return c.json({ 
+        success: false, 
+        message: 'Failed to update profile' 
+      }, 500);
+    }
   }
 }

@@ -48,7 +48,7 @@ async function main() {
         lng: lng,
         address: 'West Palm Beach, FL, USA',
         city: 'West Palm Beach',
-        country: 'USA',
+        country: 'United States',
         authorId: testUser.id,
         upvotes: 5,
         downvotes: 1

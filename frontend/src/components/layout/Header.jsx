@@ -3,7 +3,7 @@ import { MapPin, LogIn, LogOut, User, PlusCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Header = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -39,16 +39,16 @@ const Header = () => {
               
               <div className="relative group">
                 <div className="flex items-center space-x-2 cursor-pointer">
-                <Link to={`/profile/${user?.id}`} className="flex items-center space-x-2">
-                  <img 
-                    src={user?.avatar || 'https://placehold.co/600x400/000000/FFFFFF.png?text=Profile'} 
-                    alt={user?.username} 
-                    className="w-8 h-8 rounded-full border border-gray-200"
-                  />
-                  <span className="hidden sm:inline text-sm font-medium text-gray-700">
-                    {user?.username}
-                  </span>
-                </Link>
+                  <Link to={`/profile/${user?.id}`} className="flex items-center space-x-2">
+                    <img 
+                      src={user?.avatarUrl || 'https://placehold.co/600x400/000000/FFFFFF.png?text=Profile'} 
+                      alt={user?.username} 
+                      className="w-8 h-8 rounded-full border border-gray-200"
+                    />
+                    <span className="hidden sm:inline text-sm font-medium text-gray-700">
+                      {user?.username}
+                    </span>
+                  </Link>
                 </div>
                 
                 <div className="hidden group-hover:block absolute right-0 w-48 bg-white rounded-md shadow-lg py-1 z-50">
